@@ -4,7 +4,6 @@
 
 const tmi = require("tmi.js");
 const fs = require("fs");
-const path = require("path");
 
 // AI modul
 const { getAIResponse } = require("./core/aiResponses");
@@ -20,10 +19,10 @@ const { getCurrentGame } = require("./core/twitchApi");
 const BOT_USERNAME = "vexru";
 const OAUTH_TOKEN = "oauth:rxypa2cz9eif4totvgkaz8emkcfn5m";
 
-// ⚠️ MUSÍ BÝT STRING, NE POLE
+// ✔ MUSÍ BÝT STRING, NE POLE
 const CHANNEL_NAME = "#alfadavius1";
 
-const STREAMER_LOGIN = "alfadavius1"; // pro Twitch API
+const STREAMER_LOGIN = "alfadavius1";
 
 // Cache hry
 let lastGame = null;
@@ -56,8 +55,8 @@ client.connect();
 // DEBUG LOG
 client.on("connected", () => {
     console.log("BOT JE V CHATTU");
+    console.log("BOT JE PŘIHLÁŠENÝ");
 });
-client.on("connected", () => console.log("BOT JE PŘIHLÁŠENÝ"));
 
 // ===============================
 // COMMAND LOADER
