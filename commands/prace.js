@@ -1,7 +1,7 @@
 // commands/prace.js
-const { checkCooldown } = require("../data/cooldowns");
-const { addXP } = require("../data/xp");
-const fs = require("fs");
+const cooldowns = require("../core/cooldowns.js");
+const { addXP } = require("../core/xp.js");
+const profile = require("../core/profile.js");
 
 module.exports = {
     name: "prace",
