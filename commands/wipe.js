@@ -37,7 +37,9 @@ module.exports = {
         // AI REAKCE
         const ai = aiResponses.getAIResponse();
 
-        return client.say(channel, `@${username} profil hráče **${target}** byl úspěšně wipe-nut. ${ai}`);
+        return client.say(
+            channel,
+            `@${username} profil hráče **${target}** byl úspěšně wipe-nut. ${ai}`
+        );
     }
 };
-
