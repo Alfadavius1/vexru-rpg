@@ -1,8 +1,8 @@
 // commands/lov.js
 const fs = require("fs");
 const path = require("path");
-const { getRarity, getRarityInfo } = require("../data/rarity");
-const { addItem } = require("../core/inventory");
+const { getRarity, getRarityInfo } = require("../data/rarity.js");
+const { addItem } = require("../core/inventory.js");
 const { checkCooldown } = require("../core/cooldowns.js");
 const { addXP } = require("../core/xp.js");
 
