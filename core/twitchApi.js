@@ -1,14 +1,40 @@
 const axios = require("axios");
 
-const CLIENT_ID = "gra19eeuml50e0et0sdnmfw2ez9ouy";     // z dev.twitch.tv
-const APP_TOKEN = "def4qnqgy2ffnn8ir36r5oaeya7b4";              // správný token
-const STREAMER_LOGIN = "alfadavius1";                   // tvůj Twitch nick
+// DOPLŇ SEM:
+const CLIENT_ID = "TVŮJ_CLIENT_ID";
+const CLIENT_SECRET = "TVŮJ_CLIENT_SECRET";
+
+let APP_TOKEN = null;
+
+// Získání App Access Tokenu
+async function refreshAppToken() {
+    try {
+        const res = await axios.post(
+            `https://id.twitch.tv/oauth2/token`,
+            null,
+            {
+                params: {
+                    client_id: CLIENT_ID,
+                    client_secret: CLIENT_SECRET,
+                    grant_type: "client_credentials"
+                }
+            }
+        );
+
+        APP_TOKEN = res.data.access_token;
+        console.log("Twitch API token obnoven.");
+    } catch (err) {
+        console.error("Chyba při získávání API tokenu:", err.response?.data || err);
+    }
+}
 
 // Získání informací o streamu
-async function getStreamInfo() {
+async function getStreamInfo(login) {
+    if (!APP_TOKEN) await refreshAppToken();
+
     try {
         const response = await axios.get(
-            `https://api.twitch.tv/helix/streams?user_login=${STREAMER_LOGIN}`,
+            `https://api.twitch.tv/helix/streams?user_login=${login}`,
             {
                 headers: {
                     "Client-ID": CLIENT_ID,
@@ -25,8 +51,8 @@ async function getStreamInfo() {
 }
 
 // Získání názvu hry
-async function getCurrentGame() {
-    const stream = await getStreamInfo();
+async function getCurrentGame(login) {
+    const stream = await getStreamInfo(login);
     if (!stream) return null;
 
     try {
@@ -34,7 +60,7 @@ async function getCurrentGame() {
             `https://api.twitch.tv/helix/games?id=${stream.game_id}`,
             {
                 headers: {
-                    "Client-ID": gra19eeuml50e0et0sdnmfw2ez9ouy,
+                    "Client-ID": CLIENT_ID,
                     "Authorization": `Bearer ${APP_TOKEN}`
                 }
             }
@@ -47,15 +73,7 @@ async function getCurrentGame() {
     }
 }
 
-// Získání názvu streamu
-async function getStreamTitle() {
-    const stream = await getStreamInfo();
-    return stream ? stream.title : null;
-}
-
 module.exports = {
-    getStreamInfo,
     getCurrentGame,
-    getStreamTitle
+    getStreamInfo
 };
-
