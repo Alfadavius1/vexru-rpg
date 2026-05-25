@@ -6,21 +6,39 @@ module.exports = {
     description: "Vypíše všechny dostupné příkazy",
 
     execute: async (client, channel, user) => {
-        const commandsPath = path.join(__dirname);
-        const files = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+        try {
+            const commandsPath = path.join(__dirname);
 
-        const commandNames = files
-            .map(f => require(path.join(commandsPath, f)))
-            .filter(cmd => cmd.name && cmd.name !== "all") // neukazuj sám sebe
-            .map(cmd => "!" + cmd.name);
+            // Načteme všechny .js soubory v /commands
+            const files = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
-        if (commandNames.length === 0) {
-            return client.say(channel, "Žádné příkazy nebyly nalezeny.");
+            // Načteme příkazy bezpečně (bez dvojitého require)
+            const commandNames = [];
+
+            for (const file of files) {
+                if (file === "all.js") continue; // neukazuj sám sebe
+
+                const cmdPath = path.join(commandsPath, file);
+                const cmd = require(cmdPath);
+
+                if (cmd && cmd.name) {
+                    commandNames.push("!" + cmd.name);
+                }
+            }
+
+            if (commandNames.length === 0) {
+                return client.say(channel, "Žádné příkazy nebyly nalezeny.");
+            }
+
+            // Jediná odpověď
+            return client.say(
+                channel,
+                `📜 Dostupné příkazy: ${commandNames.join(" | ")}`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !all:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo při načítání příkazů.`);
         }
-
-        return client.say(
-            channel,
-            `📜 Dostupné příkazy: ${commandNames.join(" | ")}`
-        );
     }
 };
