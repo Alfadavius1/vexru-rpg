@@ -6,8 +6,8 @@ const tmi = require("tmi.js");
 const fs = require("fs");
 
 // AI reakce
-const { getAIResponse } = require("./core/aiResponses");
-const { getProfile } = require("./core/profile");
+const aiResponses = require("../core/aiResponses.js");
+const { getProfile } = require("./core/profile.js");
 
 // ===============================
 // CLIENT
