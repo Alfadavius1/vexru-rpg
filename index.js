@@ -25,10 +25,10 @@ app.listen(process.env.PORT || 3000);
 // CONFIG
 // =======================================
 
-const BOT_USERNAME = "vexru";
-const OAUTH_TOKEN = "oauth:rqp44bbm9fcsusuvel7xpzvh73r27w";
-const CHANNEL_NAME = "#alfadavius1";
-const STREAMER_LOGIN = "alfadavius1";
+const BOT_USERNAME = process.env.BOT_USERNAME || "vexru";
+const OAUTH_TOKEN = process.env.OAUTH_TOKEN || "oauth:xxxxx";
+const CHANNEL_NAME = process.env.CHANNEL_NAME || "#alfadavius1";
+const STREAMER_LOGIN = process.env.STREAMER_LOGIN || "alfadavius1";
 
 // Cache hry
 let lastGame = null;
