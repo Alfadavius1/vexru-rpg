@@ -1,17 +1,26 @@
 // core/xp.js
 const fs = require("fs");
-const path = "./data/users.json";
-const { xpNeeded } = require("./levels");
-const { getRank } = require("./ranks");
-const { getRarityInfo } = require("../data/rarity");
+const path = require("path");
 
+// Správné importy
+const { xpNeeded } = require("./levels.js");
+const { getRank } = require("./ranks.js");
+const { getRarityInfo } = require("../data/rarity.js");
+
+// Cesta k users.json – funguje i na Renderu
+const usersPath = path.join(__dirname, "..", "data", "users.json");
+
+// Bezpečné načtení DB
 function loadDB() {
-    if (!fs.existsSync(path)) return {};
-    return JSON.parse(fs.readFileSync(path));
+    if (!fs.existsSync(usersPath)) return {};
+    const raw = fs.readFileSync(usersPath, "utf8").trim();
+    if (!raw) return {};
+    return JSON.parse(raw);
 }
 
+// Bezpečné uložení DB
 function saveDB(db) {
-    fs.writeFileSync(path, JSON.stringify(db, null, 2));
+    fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
 }
 
 function addXP(username, amount) {
@@ -38,12 +47,11 @@ function addXP(username, amount) {
         const info = getRarityInfo(item.rarity);
         if (!info) continue;
 
-        xpBuff += info.buffs.xp;
+        xpBuff += info.buffs?.xp || 0;
     }
 
     // Aplikace buffů
     const finalXP = amount + xpBuff;
-
     user.xp += finalXP;
 
     // LEVEL UP
