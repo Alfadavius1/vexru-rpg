@@ -11,7 +11,6 @@ module.exports = {
 🍌 MEME / SRANDA
 • !banan — změří banán
 • !analyza — náhodná analýza
-• !nasranost — procenta nasranosti
 • !ego — ego level
 • !skill — skill level
 • !toxicity — toxicita
