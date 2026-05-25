@@ -6,7 +6,9 @@ const xpPath = path.join(__dirname, "..", "data", "xp.json");
 // Načtení XP databáze
 function loadXP() {
     if (!fs.existsSync(xpPath)) return {};
-    return JSON.parse(fs.readFileSync(xpPath, "utf8"));
+    const raw = fs.readFileSync(xpPath, "utf8").trim();
+    if (!raw) return {};
+    return JSON.parse(raw);
 }
 
 // Uložení XP databáze
@@ -60,4 +62,9 @@ function getTop(limit = 10) {
         .slice(0, limit);
 }
 
-module.exports = { getUser, addXP, getNeededXP, getTop };
+module.exports = {
+    getUser,
+    addXP,
+    getNeededXP,
+    getTop
+};
