@@ -1,20 +1,7 @@
-// commands/lvl.js
-const { getProfile } = require("../core/profile");
+// core/levels.js
 
-module.exports = {
-    name: "lvl",
-    description: "Ukáže level hráče",
-    execute: async (client, channel, user) => {
+function xpNeeded(level) {
+    return Math.floor(50 + level * 35 + (level ** 2) * 5);
+}
 
-        const profile = getProfile(user.username.toLowerCase());
-
-        if (!profile) {
-            return client.say(channel, `@${user.username} ještě nemáš profil.`);
-        }
-
-        client.say(
-            channel,
-            `📈 @${user.username} má level ${profile.level} a ${profile.xp} XP.`
-        );
-    }
-};
+module.exports = { xpNeeded };
