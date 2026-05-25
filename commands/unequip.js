@@ -1,4 +1,3 @@
-// commands/unequip.js
 const fs = require("fs");
 const path = require("path");
 
@@ -18,6 +17,7 @@ function saveDB(db) {
 module.exports = {
     name: "unequip",
     description: "Sundá item ze slotu a vrátí ho do inventáře",
+
     execute: async (client, channel, user, args) => {
         const username = user.username.toLowerCase();
         const slot = args[0]?.toLowerCase();
@@ -49,6 +49,9 @@ module.exports = {
 
         saveDB(db);
 
-        client.say(channel, `🧰 @${user.username} sundal item **${item.name}** ze slotu ${slot}.`);
+        return client.say(
+            channel,
+            `🧰 @${user.username} sundal item **${item.name}** ze slotu ${slot}.`
+        );
     }
 };
