@@ -22,28 +22,18 @@ module.exports = {
             respect: 0,
             toxicity: 0,
             friendliness: 0,
+            chaos: 0,
             activity: 0
         };
 
         const ai = db[username].ai;
 
-        // Aktivita
         ai.activity++;
 
-        // Friendly
-        if (message.match(/(děkuji|dik|díky|❤️|😊|dobrý)/i)) {
-            ai.friendliness++;
-        }
-
-        // Toxic
-        if (message.match(/(kokot|debil|píča|idiot|trash)/i)) {
-            ai.toxicity++;
-        }
-
-        // Respekt (dlouhé zprávy)
-        if (message.length > 40) {
-            ai.respect++;
-        }
+        if (message.match(/(děkuji|dik|díky|❤️|😊|dobrý)/i)) ai.friendliness++;
+        if (message.match(/(kokot|debil|píča|idiot|trash)/i)) ai.toxicity++;
+        if (message.length > 40) ai.respect++;
+        if (message.match(/(wtf|lol|xd|random)/i)) ai.chaos++;
 
         saveDB(db);
     },
@@ -54,25 +44,51 @@ module.exports = {
 
         if (!ai) return "neutral";
 
-        if (ai.toxicity > ai.friendliness && ai.toxicity > ai.respect) return "toxic";
-        if (ai.friendliness > ai.toxicity && ai.friendliness > ai.respect) return "friendly";
-        if (ai.respect > ai.toxicity && ai.respect > ai.friendliness) return "wise";
+        const scores = {
+            friendly: ai.friendliness,
+            toxic: ai.toxicity,
+            wise: ai.respect,
+            chaotic: ai.chaos
+        };
 
-        return "neutral";
+        const max = Math.max(...Object.values(scores));
+        const type = Object.keys(scores).find(k => scores[k] === max);
+
+        return type || "neutral";
     },
 
     generateReply(username, base) {
         const personality = this.getPersonality(username);
 
-        switch (personality) {
-            case "friendly":
-                return base + " 😊";
-            case "toxic":
-                return base + " ...a příště piš líp, šašku.";
-            case "wise":
-                return "🧠 " + base + " — zajímavá volba, poutníku.";
-            default:
-                return base;
-        }
+        const variants = {
+            friendly: [
+                `${base} 😊`,
+                `${base} kámo, jsi frajer.`,
+                `${base} ❤️`
+            ],
+            toxic: [
+                `${base} ...no, čekal jsem víc.`,
+                `${base} šašku.`,
+                `${base} tohle bolelo víc než tvoje statistiky.`
+            ],
+            wise: [
+                `🧠 ${base} — cesta je důležitější než cíl.`,
+                `🧠 ${base} — zajímavá volba.`,
+                `🧠 ${base} — tak praví staré svitky.`
+            ],
+            chaotic: [
+                `${base} 😂`,
+                `${base} počkej, cože?`,
+                `${base} tohle je největší random dne.`
+            ],
+            neutral: [
+                base,
+                `${base}.`,
+                `${base}!`
+            ]
+        };
+
+        const list = variants[personality] || variants.neutral;
+        return list[Math.floor(Math.random() * list.length)];
     }
 };
