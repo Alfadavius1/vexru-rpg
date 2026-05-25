@@ -7,7 +7,7 @@ const fs = require("fs");
 
 // AI reakce
 const aiResponses = require("../core/aiResponses.js");
-const { getProfile } = require("./core/profile.js");
+const profile = require("./core/profile.js");
 
 // ===============================
 // CLIENT
