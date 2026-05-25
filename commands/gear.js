@@ -1,12 +1,11 @@
-// commands/gear.js
 const { getProfile } = require("../core/profile");
 
 module.exports = {
     name: "gear",
     description: "Zobrazí vybavení hráče",
-    execute: async (client, channel, user) => {
 
-        const profile = getProfile(user.username);
+    execute: async (client, channel, user) => {
+        const profile = getProfile(user.username.toLowerCase());
 
         if (!profile) {
             return client.say(channel, `@${user.username} nemáš profil.`);
@@ -14,7 +13,7 @@ module.exports = {
 
         const g = profile.gear;
 
-        client.say(
+        return client.say(
             channel,
             `🛡️ Gear @${user.username}:
 Weapon: ${g.weapon ? g.weapon.name + " [" + g.weapon.rarity + "]" : "nic"}
