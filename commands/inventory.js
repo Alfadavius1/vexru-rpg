@@ -15,36 +15,48 @@ module.exports = {
     description: "Zobrazí inventář hráče",
 
     execute: async (client, channel, user) => {
-        const username = user.username.toLowerCase();
-        const db = loadDB();
+        try {
+            const username = user.username.toLowerCase();
+            const db = loadDB();
 
-        if (!db[username]) {
-            return client.say(channel, `@${user.username} nemáš profil.`);
+            // Profil neexistuje
+            if (!db[username]) {
+                return client.say(channel, `@${user.username} nemáš profil.`);
+            }
+
+            const inv = db[username].inventory || [];
+
+            // Prázdný inventář
+            if (inv.length === 0) {
+                return client.say(channel, `@${user.username} inventář je prázdný.`);
+            }
+
+            // Emoji podle rarity
+            const rarityEmoji = {
+                mythical: "🟠",
+                legendary: "🟣",
+                epic: "🔵",
+                rare: "🟢",
+                common: "⚪"
+            };
+
+            // Seřadíme rarity
+            const order = ["mythical", "legendary", "epic", "rare", "common"];
+            const sorted = inv.sort(
+                (a, b) => order.indexOf(a.rarity) - order.indexOf(b.rarity)
+            );
+
+            // Výpis
+            const text = sorted
+                .map(i => `${rarityEmoji[i.rarity] || "⚪"} ${i.name}`)
+                .join(" | ");
+
+            // Jediná odpověď
+            return client.say(channel, `🎒 @${user.username} inventář: ${text}`);
+
+        } catch (err) {
+            console.error("Chyba v !inventory:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        const inv = db[username].inventory || [];
-
-        if (inv.length === 0) {
-            return client.say(channel, `@${user.username} inventář je prázdný.`);
-        }
-
-        // Emoji podle rarity
-        const rarityEmoji = {
-            legendary: "🟣",
-            epic: "🔵",
-            rare: "🟢",
-            common: "⚪",
-            mythical: "🟠"
-        };
-
-        // Seřadíme rarity
-        const order = ["mythical", "legendary", "epic", "rare", "common"];
-        const sorted = inv.sort((a, b) => order.indexOf(a.rarity) - order.indexOf(b.rarity));
-
-        const text = sorted
-            .map(i => `${rarityEmoji[i.rarity] || "⚪"} ${i.name}`)
-            .join(" | ");
-
-        return client.say(channel, `🎒 @${user.username} inventář: ${text}`);
     }
 };
