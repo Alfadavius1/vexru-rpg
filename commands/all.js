@@ -13,7 +13,6 @@ module.exports = {
 • !analyza — náhodná analýza
 • !ego — ego level
 • !skill — skill level
-• !toxicity — toxicita
 • !power — power level
 
 🤖 AI ROLEPLAY
