@@ -32,7 +32,7 @@ function addItem(username, item) {
             rarity: item.rarity || "common",
             type: item.type || "material",
             amount: item.amount || 1,
-            value: item.value || 1
+           value: item.type === "junk" ? 1 : (item.value || 1),
         });
     }
 
