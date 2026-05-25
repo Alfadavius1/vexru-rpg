@@ -1,4 +1,3 @@
-// commands/lov.js
 const fs = require("fs");
 const path = require("path");
 const { getRarity, getRarityInfo } = require("../data/rarity.js");
@@ -9,14 +8,15 @@ const { addXP } = require("../core/xp.js");
 module.exports = {
     name: "lov",
     description: "Jdeš lovit a získáš loot",
+
     execute: async (client, channel, user) => {
         try {
             const username = user.username.toLowerCase();
 
             // Cooldown
             const cd = checkCooldown(username, "lov", 30);
-            if (cd) {
-                return client.say(channel, `@${user.username} počkej ještě ${cd.toFixed(1)}s.`);
+            if (cd > 0) {
+                return client.say(channel, `@${user.username} počkej ještě ${cd}s.`);
             }
 
             // Cesty k souborům
@@ -78,21 +78,20 @@ module.exports = {
 
             // Uložení goldů
             db[username].gold = (db[username].gold || 0) + goldGain;
-
             fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
 
             // XP
             addXP(username, xpGain);
 
-            // Výstup do chatu
-            client.say(
+            // Výstup do chatu — JEDINÁ odpověď
+            return client.say(
                 channel,
                 `🦌 @${user.username} ulovil **${rarity}** item: ${baseItem.name} | XP +${xpGain}, Gold +${goldGain}`
             );
 
         } catch (err) {
             console.error("Chyba v !lov:", err);
-            client.say(channel, `@${user.username} něco se pokazilo.`);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
     }
 };
