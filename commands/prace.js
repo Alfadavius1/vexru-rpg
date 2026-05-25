@@ -1,34 +1,37 @@
-// commands/prace.js
 const cooldowns = require("../core/cooldowns.js");
 const { addXP } = require("../core/xp.js");
-const profile = require("../core/profile.js");
+const fs = require("fs");
 
 module.exports = {
     name: "prace",
-    description: "Jdeš pracovat a vyděláš goldy",
-    execute: async (client, channel, user) => {
+    description: "Vyděláš si gold a XP",
 
-        const cd = checkCooldown(user.username, "prace", 60);
-        if (cd) {
-            return client.say(channel, `@${user.username} musíš počkat ${cd.toFixed(1)}s.`);
+    execute: async (client, channel, user) => {
+        const username = user.username.toLowerCase();
+
+        // Cooldown 60 sekund
+        const cd = cooldowns.checkCooldown(username, "prace", 60);
+        if (cd > 0) {
+            return client.say(channel, `@${username} makal jsi nedávno. Zkus to za ${cd}s.`);
         }
 
-        const gold = Math.floor(Math.random() * 10) + 5;
-        const xp = Math.floor(Math.random() * 5) + 3;
+        const rewardGold = Math.floor(Math.random() * 20) + 10; // 10–30 gold
+        const rewardXP = Math.floor(Math.random() * 5) + 5;     // 5–10 XP
 
+        // JSON databáze
         const db = JSON.parse(fs.readFileSync("./data/users.json"));
-        const key = user.username.toLowerCase();
+        if (!db[username]) db[username] = {};
 
-        if (!db[key]) db[key] = {};
+        db[username].gold = (db[username].gold || 0) + rewardGold;
 
-        db[key].gold = (db[key].gold || 0) + gold;
         fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
 
-        addXP(user.username, xp);
+        // XP systém
+        addXP(username, rewardXP);
 
         client.say(
             channel,
-            `💼 @${user.username} pracoval a získal ${gold} gold a ${xp} XP.`
+            `💼 @${username} pracoval a získal ${rewardGold} gold a ${rewardXP} XP.`
         );
     }
 };
