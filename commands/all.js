@@ -13,7 +13,6 @@ module.exports = {
 • !analyza — náhodná analýza
 • !nasranost — procenta nasranosti
 • !ego — ego level
-• !stesti — štěstí
 • !skill — skill level
 • !toxicity — toxicita
 • !power — power level
