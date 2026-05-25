@@ -1,34 +1,63 @@
-const { getUser, getNeededXP } = require("../core/xp");
+const fs = require("fs");
+const path = require("path");
 
-module.exports = {
-    name: "xp",
-    description: "Zobrazí XP a level hráče",
+const xpPath = path.join(__dirname, "..", "data", "xp.json");
 
-    execute: async (client, channel, user) => {
-        try {
-            const username = user.username.toLowerCase();
+// Načtení XP databáze
+function loadXP() {
+    if (!fs.existsSync(xpPath)) return {};
+    return JSON.parse(fs.readFileSync(xpPath, "utf8"));
+}
 
-            // Načtení XP dat
-            const data = await getUser(username);
+// Uložení XP databáze
+function saveXP(db) {
+    fs.writeFileSync(xpPath, JSON.stringify(db, null, 2));
+}
 
-            if (!data) {
-                return client.say(
-                    channel,
-                    `@${username} zatím nemáš žádné XP. Napiš něco do chatu a začneš je získávat!`
-                );
-            }
+// Získání uživatele
+function getUser(username) {
+    const db = loadXP();
+    return db[username] || null;
+}
 
-            const needed = getNeededXP(data.level);
+// Přidání XP
+function addXP(username, amount) {
+    const db = loadXP();
 
-            // ⭐ Jediná odpověď
-            return client.say(
-                channel,
-                `@${username} • Level: ${data.level} • XP: ${data.xp}/${needed}`
-            );
-
-        } catch (err) {
-            console.error("Chyba v !xp:", err);
-            return client.say(channel, `@${user.username} něco se pokazilo.`);
-        }
+    if (!db[username]) {
+        db[username] = { xp: 0, level: 1 };
     }
-};
+
+    db[username].xp += amount;
+
+    const needed = getNeededXP(db[username].level);
+
+    if (db[username].xp >= needed) {
+        db[username].level++;
+        db[username].xp = 0;
+    }
+
+    saveXP(db);
+}
+
+// XP potřebné na level
+function getNeededXP(level) {
+    return 50 + level * 25;
+}
+
+// TOP žebříček
+function getTop(limit = 10) {
+    const db = loadXP();
+
+    const arr = Object.entries(db).map(([username, data]) => ({
+        username,
+        xp: data.xp,
+        level: data.level
+    }));
+
+    return arr
+        .sort((a, b) => b.level - a.level || b.xp - a.xp)
+        .slice(0, limit);
+}
+
+module.exports = { getUser, addXP, getNeededXP, getTop };
