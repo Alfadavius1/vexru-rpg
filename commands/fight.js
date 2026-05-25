@@ -1,4 +1,3 @@
-// commands/fight.js
 const path = require("path");
 const fs = require("fs");
 
@@ -14,9 +13,9 @@ module.exports = {
     execute: async (client, channel, user, args) => {
 
         // Cooldown 20 sekund
-        const cd = checkCooldown(user.username, "fight", 20);
-        if (cd) {
-            return client.say(channel, `@${user.username} počkej ještě ${cd.toFixed(1)}s.`);
+        const cd = checkCooldown(user.username.toLowerCase(), "fight", 20);
+        if (cd > 0) {
+            return client.say(channel, `@${user.username} počkej ještě ${cd}s.`);
         }
 
         // Musí označit hráče
@@ -85,8 +84,8 @@ module.exports = {
         // AI komentář
         const comment = getAIResponse();
 
-        // Výstup
-        client.say(
+        // Výstup — JEDINÁ odpověď
+        return client.say(
             channel,
             `⚔️ Souboj: @${attackerName} vs @${targetName}
 Vítěz: @${winner} 🎉 | XP +${xpReward}, Gold +${goldReward}
