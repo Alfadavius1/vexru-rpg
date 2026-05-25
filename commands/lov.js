@@ -2,7 +2,7 @@
 const fs = require("fs");
 const { getRarity, getRarityInfo } = require("../data/rarity");
 const { addItem } = require("../data/inventory");
-const cooldowns = require("../core/cooldowns.js");
+const { checkCooldown } = require("../core/cooldowns.js");
 const { addXP } = require("../core/xp.js");
 
 module.exports = {
