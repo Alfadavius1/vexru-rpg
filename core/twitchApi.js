@@ -1,8 +1,8 @@
 const axios = require("axios");
 
 // DOPLŇ SEM:
-const CLIENT_ID = "TVŮJ_CLIENT_ID";
-const CLIENT_SECRET = "TVŮJ_CLIENT_SECRET";
+const CLIENT_ID = "gra19eeuml50e0et0sdnmfw2ez9ouy";
+const CLIENT_SECRET = "lt9ln8rkypuyugubxn3yw4rcvtp815";
 
 let APP_TOKEN = null;
 
