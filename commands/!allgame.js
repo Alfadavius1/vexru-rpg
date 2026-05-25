@@ -9,7 +9,7 @@ module.exports = {
 @${username} RPG příkazy:
 
 ⚔️ BOJ
-• !fight [easy/medium/hard] — souboj 1v1 proti nepříteli
+• !fight — souboj 1v1 proti nepříteli
 • !lov [easy/medium/hard] — lov nepřátel
 • !dungeon [easy/medium/hard] — dungeon (3 mobové + boss)
 
