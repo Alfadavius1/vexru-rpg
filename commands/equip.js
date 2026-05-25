@@ -1,8 +1,6 @@
-// commands/equip.js
 const fs = require("fs");
 const path = require("path");
 const { getRarityInfo } = require("../data/rarity.js");
-const { addItem } = require("../core/inventory.js");
 
 const usersPath = path.join(__dirname, "..", "data", "users.json");
 
@@ -20,6 +18,7 @@ function saveDB(db) {
 module.exports = {
     name: "equip",
     description: "Nasadí item z inventáře",
+
     execute: async (client, channel, user, args) => {
         const username = user.username.toLowerCase();
         const db = loadDB();
@@ -66,7 +65,7 @@ module.exports = {
 
         const info = getRarityInfo(item.rarity);
 
-        client.say(
+        return client.say(
             channel,
             `🛡️ @${user.username} nasadil **${item.rarity}** ${item.name} (${slot}) | DMG +${info.buffs.dmg}, XP +${info.buffs.xp}, LUCK +${info.buffs.luck}`
         );
