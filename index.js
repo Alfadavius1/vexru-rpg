@@ -19,7 +19,9 @@ const { getCurrentGame } = require("./core/twitchApi");
 
 const BOT_USERNAME = "vexru";
 const OAUTH_TOKEN = "oauth:rxypa2cz9eif4totvgkaz8emkcfn5m";
-const CHANNEL_NAME = "alfadavius1";
+
+// ⚠️ MUSÍ BÝT STRING, NE POLE
+const CHANNEL_NAME = "#alfadavius1";
 
 const STREAMER_LOGIN = "alfadavius1"; // pro Twitch API
 
@@ -43,18 +45,19 @@ async function getGameCached() {
 const client = new tmi.Client({
     options: { debug: false },
     identity: {
-        username: "vexru",
-        password: "oauth:rxypa2cz9eif4totvgkaz8emkcfn5m"
+        username: BOT_USERNAME,
+        password: OAUTH_TOKEN
     },
-    channels: ["alfadavius1"]
+    channels: [CHANNEL_NAME]   // ✔ správně
 });
 
 client.connect();
 
-// DEBUG LOG – uvidíš, jestli je bot opravdu v chatu
+// DEBUG LOG
 client.on("connected", () => {
     console.log("BOT JE V CHATTU");
 });
+client.on("connected", () => console.log("BOT JE PŘIHLÁŠENÝ"));
 
 // ===============================
 // COMMAND LOADER
@@ -155,7 +158,6 @@ client.on("message", async (channel, user, message, self) => {
         }
     }
 });
-client.on("connected", () => console.log("BOT JE PŘIHLÁŠENÝ"));
 
 // ===============================
 // AUTO !all KAŽDÝCH 20 MINUT
