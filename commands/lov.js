@@ -19,14 +19,15 @@ module.exports = {
                 return client.say(channel, `@${user.username} počkej ještě ${cd.toFixed(1)}s.`);
             }
 
-            // Cesty k souborům – fungují i na Renderu
+            // Cesty k souborům
             const usersPath = path.join(__dirname, "..", "data", "users.json");
             const itemsPath = path.join(__dirname, "..", "data", "baseItems.json");
 
             // Načtení DB
             let db = {};
             if (fs.existsSync(usersPath)) {
-                db = JSON.parse(fs.readFileSync(usersPath));
+                const raw = fs.readFileSync(usersPath, "utf8").trim();
+                db = raw ? JSON.parse(raw) : {};
             }
 
             // Pokud hráč neexistuje → vytvoříme základní profil
@@ -47,7 +48,9 @@ module.exports = {
                 return client.say(channel, `@${user.username} něco se pokazilo (chybí baseItems.json).`);
             }
 
-            const baseItems = JSON.parse(fs.readFileSync(itemsPath));
+            const rawItems = fs.readFileSync(itemsPath, "utf8").trim();
+            const baseItems = rawItems ? JSON.parse(rawItems) : [];
+
             if (!Array.isArray(baseItems) || baseItems.length === 0) {
                 return client.say(channel, `@${user.username} něco se pokazilo (žádné itemy v baseItems.json).`);
             }
@@ -79,13 +82,14 @@ module.exports = {
             fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
 
             // XP
-            addXP(user.username, xpGain);
+            addXP(username, xpGain);
 
             // Výstup do chatu
             client.say(
                 channel,
                 `🦌 @${user.username} ulovil **${rarity}** item: ${baseItem.name} | XP +${xpGain}, Gold +${goldGain}`
             );
+
         } catch (err) {
             console.error("Chyba v !lov:", err);
             client.say(channel, `@${user.username} něco se pokazilo.`);
