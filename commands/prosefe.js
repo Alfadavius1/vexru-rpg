@@ -23,7 +23,7 @@ module.exports = {
 
         const needed = getNeededXP(xpData.level);
 
-        client.say(
+        return client.say(
             channel,
             `🧰 @${username} | Profese: ${profese} | Level: ${xpData.level} | XP: ${xpData.xp}/${needed} | Gold: ${gold}`
         );
