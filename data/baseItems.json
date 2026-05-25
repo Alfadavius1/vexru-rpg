@@ -43,7 +43,7 @@
 
   { "name": "Lovcova kuše", "type": "weapon" },
   { "name": "Bojová sekera", "type": "weapon" },
-  { "name": "Ocelový kladivo", "type": "weapon" },
+  { "name": "Ocelové kladivo", "type": "weapon" },
   { "name": "Temná hůl", "type": "weapon" },
   { "name": "Elfí luk", "type": "weapon" },
 
@@ -57,5 +57,82 @@
   { "name": "Amulet štěstí", "type": "trinket" },
   { "name": "Prsten vitality", "type": "trinket" },
   { "name": "Prsten přesnosti", "type": "trinket" },
-  { "name": "Prsten moudrosti", "type": "trinket" }
+  { "name": "Prsten moudrosti", "type": "trinket" },
+
+  { "name": "Dračí šupina", "type": "material" },
+  { "name": "Dračí kost", "type": "material" },
+  { "name": "Dračí krev", "type": "material" },
+  { "name": "Dračí dráp", "type": "material" },
+
+  { "name": "Dračí meč", "type": "weapon" },
+  { "name": "Dračí kopí", "type": "weapon" },
+  { "name": "Dračí luk", "type": "weapon" },
+  { "name": "Dračí hůl", "type": "weapon" },
+
+  { "name": "Dračí zbroj", "type": "armor" },
+  { "name": "Dračí přilba", "type": "armor" },
+  { "name": "Dračí rukavice", "type": "armor" },
+  { "name": "Dračí boty", "type": "armor" },
+
+  { "name": "Dračí amulet", "type": "trinket" },
+  { "name": "Dračí prsten", "type": "trinket" },
+
+  { "name": "Temný meč", "type": "weapon" },
+  { "name": "Temná dýka", "type": "weapon" },
+  { "name": "Temná sekera", "type": "weapon" },
+  { "name": "Temný luk", "type": "weapon" },
+  { "name": "Temná hůl", "type": "weapon" },
+
+  { "name": "Temná zbroj", "type": "armor" },
+  { "name": "Temné boty", "type": "armor" },
+  { "name": "Temné rukavice", "type": "armor" },
+  { "name": "Temná přilba", "type": "armor" },
+
+  { "name": "Temný amulet", "type": "trinket" },
+  { "name": "Temný prsten", "type": "trinket" },
+
+  { "name": "Svatý meč", "type": "weapon" },
+  { "name": "Svatá hůl", "type": "weapon" },
+  { "name": "Svatý luk", "type": "weapon" },
+
+  { "name": "Svatá zbroj", "type": "armor" },
+  { "name": "Svatá přilba", "type": "armor" },
+  { "name": "Svaté boty", "type": "armor" },
+  { "name": "Svaté rukavice", "type": "armor" },
+
+  { "name": "Svatý amulet", "type": "trinket" },
+  { "name": "Svatý prsten", "type": "trinket" },
+
+  { "name": "Mytický meč", "type": "weapon" },
+  { "name": "Mytická hůl", "type": "weapon" },
+  { "name": "Mytická sekera", "type": "weapon" },
+  { "name": "Mytický luk", "type": "weapon" },
+
+  { "name": "Mytická zbroj", "type": "armor" },
+  { "name": "Mytická přilba", "type": "armor" },
+  { "name": "Mytické boty", "type": "armor" },
+  { "name": "Mytické rukavice", "type": "armor" },
+
+  { "name": "Mytický amulet", "type": "trinket" },
+  { "name": "Mytický prsten", "type": "trinket" },
+
+  { "name": "Srdce titána", "type": "material" },
+  { "name": "Oko hydry", "type": "material" },
+  { "name": "Krvavý kámen", "type": "material" },
+  { "name": "Stínový prach", "type": "material" },
+
+  { "name": "Titánův meč", "type": "weapon" },
+  { "name": "Hydří kopí", "type": "weapon" },
+  { "name": "Stínová čepel", "type": "weapon" },
+  { "name": "Krvavá sekera", "type": "weapon" },
+
+  { "name": "Titánova zbroj", "type": "armor" },
+  { "name": "Hydří zbroj", "type": "armor" },
+  { "name": "Stínová zbroj", "type": "armor" },
+  { "name": "Krvavá zbroj", "type": "armor" },
+
+  { "name": "Titánův amulet", "type": "trinket" },
+  { "name": "Hydří amulet", "type": "trinket" },
+  { "name": "Stínový amulet", "type": "trinket" },
+  { "name": "Krvavý amulet", "type": "trinket" }
 ]
