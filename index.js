@@ -12,16 +12,23 @@ const { getProfile } = require("./core/profile");
 // Twitch API modul
 const { getCurrentGame } = require("./core/twitchApi");
 
-// ===============================
+// =======================================
+// FALEŠNÝ HTTP SERVER PRO RENDER (DŮLEŽITÉ)
+// =======================================
+
+const http = require("http");
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("OK");
+}).listen(process.env.PORT || 3000);
+
+// =======================================
 // CONFIG
-// ===============================
+// =======================================
 
 const BOT_USERNAME = "vexru";
 const OAUTH_TOKEN = "oauth:rxypa2cz9eif4totvgkaz8emkcfn5m";
-
-// ✔ MUSÍ BÝT STRING, NE POLE
 const CHANNEL_NAME = "#alfadavius1";
-
 const STREAMER_LOGIN = "alfadavius1";
 
 // Cache hry
@@ -37,9 +44,9 @@ async function getGameCached() {
     return lastGame;
 }
 
-// ===============================
+// =======================================
 // CLIENT
-// ===============================
+// =======================================
 
 const client = new tmi.Client({
     options: { debug: false },
@@ -47,20 +54,18 @@ const client = new tmi.Client({
         username: BOT_USERNAME,
         password: OAUTH_TOKEN
     },
-    channels: [CHANNEL_NAME]   // ✔ správně
+    channels: [CHANNEL_NAME]
 });
 
 client.connect();
 
-// DEBUG LOG
 client.on("connected", () => {
-    console.log("BOT JE V CHATTU");
-    console.log("BOT JE PŘIHLÁŠENÝ");
+    console.log("BOT JE V CHATTU A PŘIHLÁŠENÝ");
 });
 
-// ===============================
+// =======================================
 // COMMAND LOADER
-// ===============================
+// =======================================
 
 const commands = new Map();
 const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
@@ -71,19 +76,16 @@ for (const file of commandFiles) {
     console.log(`Loaded command: ${cmd.name}`);
 }
 
-// ===============================
+// =======================================
 // MESSAGE HANDLER
-// ===============================
+// =======================================
 
 client.on("message", async (channel, user, message, self) => {
     if (self) return;
 
     const username = user.username.toLowerCase();
 
-    // ===============================
     // COMMANDS
-    // ===============================
-
     if (message.startsWith("!")) {
         const args = message.slice(1).split(" ");
         const cmdName = args.shift().toLowerCase();
@@ -100,10 +102,7 @@ client.on("message", async (channel, user, message, self) => {
         return;
     }
 
-    // ===============================
-    // AI REAKCE – NA JMÉNO BOTA
-    // ===============================
-
+    // AI – BOT NAME
     if (message.toLowerCase().includes("vexru")) {
         const profile = getProfile(username);
         let extra = "";
@@ -118,27 +117,18 @@ client.on("message", async (channel, user, message, self) => {
         return client.say(channel, `@${username} ${ai} ${extra}`);
     }
 
-    // ===============================
-    // AI REAKCE – OTÁZKY
-    // ===============================
-
+    // AI – QUESTIONS
     if (message.endsWith("?")) {
         const ai = getAIResponse();
         return client.say(channel, `@${username} ${ai}`);
     }
 
-    // ===============================
-    // AI REAKCE – SPAM
-    // ===============================
-
+    // AI – SPAM
     if (/([a-zA-Z])\1\1/.test(message)) {
         return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
     }
 
-    // ===============================
-    // AI REAKCE – PODLE HRY (Twitch API)
-    // ===============================
-
+    // AI – GAME REACTIONS
     const game = await getGameCached();
     if (game) {
         const g = game.toLowerCase();
@@ -158,9 +148,9 @@ client.on("message", async (channel, user, message, self) => {
     }
 });
 
-// ===============================
+// =======================================
 // AUTO !all KAŽDÝCH 20 MINUT
-// ===============================
+// =======================================
 
 setInterval(() => {
     client.say(CHANNEL_NAME, "!all");
