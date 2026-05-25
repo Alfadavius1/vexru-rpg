@@ -1,92 +1,36 @@
-const fs = require("fs");
-const path = require("path");
-const { getRarityInfo } = require("../data/rarity.js");
-
-const usersPath = path.join(__dirname, "..", "data", "users.json");
-
-function loadDB() {
-    if (!fs.existsSync(usersPath)) return {};
-    const raw = fs.readFileSync(usersPath, "utf8").trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
-}
-
-function saveDB(db) {
-    fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
-}
+const { getInventory, removeItem } = require("../core/inventory");
+const { equipItem } = require("../core/gear");
 
 module.exports = {
     name: "equip",
-    description: "Nasadí item z inventáře",
+    description: "Nasadí vybavení",
 
     execute: async (client, channel, user, args) => {
-        try {
-            const username = user.username.toLowerCase();
-            const db = loadDB();
+        const username = user.username.toLowerCase();
 
-            // Profil neexistuje
-            if (!db[username]) {
-                return client.say(channel, `@${user.username} nemáš profil. Použij !profil.`);
-            }
-
-            const slot = args[0]?.toLowerCase();
-            const itemName = args.slice(1).join(" ");
-
-            // Chybné použití
-            if (!slot || !itemName) {
-                return client.say(
-                    channel,
-                    `@${user.username} použití: !equip <weapon|armor|trinket> <název itemu>`
-                );
-            }
-
-            // Neplatný slot
-            if (!["weapon", "armor", "trinket"].includes(slot)) {
-                return client.say(
-                    channel,
-                    `@${user.username} neplatný slot. Použij weapon / armor / trinket.`
-                );
-            }
-
-            const inv = db[username].inventory || [];
-
-            // Najdeme item v inventáři
-            const item = inv.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-
-            if (!item) {
-                return client.say(channel, `@${user.username} tento item nemáš v inventáři.`);
-            }
-
-            // Gear inicializace
-            db[username].gear ??= { weapon: null, armor: null, trinket: null };
-
-            // Starý item
-            const previous = db[username].gear[slot];
-
-            // Nasadíme nový
-            db[username].gear[slot] = item;
-
-            // Odebereme z inventáře
-            db[username].inventory = inv.filter(i => i !== item);
-
-            // Pokud tam byl starý item → vrátíme ho zpět
-            if (previous) {
-                db[username].inventory.push(previous);
-            }
-
-            saveDB(db);
-
-            const info = getRarityInfo(item.rarity) || { buffs: {} };
-
-            return client.say(
-                channel,
-                `🛡️ @${user.username} nasadil **${item.rarity}** ${item.name} (${slot}) | ` +
-                `DMG +${info.buffs.dmg || 0}, XP +${info.buffs.xp || 0}, LUCK +${info.buffs.luck || 0}`
-            );
-
-        } catch (err) {
-            console.error("Chyba v !equip:", err);
-            return client.say(channel, `@${user.username} něco se pokazilo.`);
+        if (!args[0]) {
+            return client.say(channel, `@${username} napiš název itemu, který chceš nasadit.`);
         }
+
+        const itemName = args.join(" ").toLowerCase();
+        const inv = getInventory(username);
+
+        const item = inv.find(i => i.name.toLowerCase() === itemName);
+
+        if (!item) {
+            return client.say(channel, `@${username} tento item nemáš v inventáři.`);
+        }
+
+        if (!item.stats) {
+            return client.say(channel, `@${username} tento item nelze nasadit.`);
+        }
+
+        // Odebereme z inventáře
+        removeItem(username, item.name, 1);
+
+        // Nasadíme
+        equipItem(username, item);
+
+        return client.say(channel, `@${username} nasadil jsi **${item.name}**.`);
     }
 };
