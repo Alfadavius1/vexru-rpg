@@ -1,77 +1,115 @@
-// core/xp.js
-const fs = require("fs");
-const path = require("path");
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("./database.db");
 
-// Správné importy
-const { xpNeeded } = require("./levels.js");
-const { getRank } = require("./ranks.js");
-const { getRarityInfo } = require("../data/rarity.js");
+// Vytvoření tabulky pro XP
+db.run(`
+CREATE TABLE IF NOT EXISTS xp (
+    username TEXT PRIMARY KEY,
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1
+)
+`);
 
-// Cesta k users.json – funguje i na Renderu
-const usersPath = path.join(__dirname, "..", "data", "users.json");
-
-// Bezpečné načtení DB
-function loadDB() {
-    if (!fs.existsSync(usersPath)) return {};
-    const raw = fs.readFileSync(usersPath, "utf8").trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
+// Exponenciální XP křivka
+// neededXP = floor(100 * 1.25^(level - 1))
+function getNeededXP(level) {
+    return Math.floor(100 * Math.pow(1.25, level - 1));
 }
 
-// Bezpečné uložení DB
-function saveDB(db) {
-    fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
+// Získání uživatele
+function getUser(username) {
+    return new Promise((resolve, reject) => {
+        db.get(
+            `SELECT * FROM xp WHERE username = ?`,
+            [username],
+            (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            }
+        );
+    });
 }
 
-function addXP(username, amount) {
-    const db = loadDB();
-    const key = username.toLowerCase();
+// Přidání XP + levelování
+async function addXP(username, amount) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let user = await getUser(username);
 
-    if (!db[key]) return;
+            // Pokud neexistuje, vytvoříme
+            if (!user) {
+                const startXP = amount;
+                const startLevel = 1;
 
-    const user = db[key];
+                db.run(
+                    `INSERT INTO xp (username, xp, level) VALUES (?, ?, ?)`,
+                    [username, startXP, startLevel],
+                    err => {
+                        if (err) return reject(err);
+                        return resolve({
+                            username,
+                            xp: startXP,
+                            level: startLevel,
+                            needed: getNeededXP(startLevel)
+                        });
+                    }
+                );
+                return;
+            }
 
-    // Základní hodnoty
-    user.level ??= 1;
-    user.xp ??= 0;
-    user.stats ??= { dmg: 5, luck: 1, hp: 100 };
-    user.gear ??= { weapon: null, armor: null, trinket: null };
+            let newXP = user.xp + amount;
+            let newLevel = user.level;
+            let leveledUp = false;
 
-    // XP buffy z gearu
-    let xpBuff = 0;
+            // Levelování – může proběhnout víckrát, když dostane hodně XP najednou
+            while (true) {
+                const needed = getNeededXP(newLevel);
+                if (newXP >= needed) {
+                    newXP -= needed;
+                    newLevel++;
+                    leveledUp = true;
+                } else {
+                    break;
+                }
+            }
 
-    for (const slot of ["weapon", "armor", "trinket"]) {
-        const item = user.gear[slot];
-        if (!item) continue;
-
-        const info = getRarityInfo(item.rarity);
-        if (!info) continue;
-
-        xpBuff += info.buffs?.xp || 0;
-    }
-
-    // Aplikace buffů
-    const finalXP = amount + xpBuff;
-    user.xp += finalXP;
-
-    // LEVEL UP
-    let needed = xpNeeded(user.level);
-
-    while (user.xp >= needed) {
-        user.xp -= needed;
-        user.level++;
-
-        // Stat bonusy za level
-        user.stats.dmg += 1;
-        user.stats.hp += 5;
-
-        needed = xpNeeded(user.level);
-    }
-
-    // Aktualizace ranku
-    user.rank = getRank(user.level);
-
-    saveDB(db);
+            db.run(
+                `UPDATE xp SET xp = ?, level = ? WHERE username = ?`,
+                [newXP, newLevel, username],
+                err => {
+                    if (err) return reject(err);
+                    return resolve({
+                        username,
+                        xp: newXP,
+                        level: newLevel,
+                        needed: getNeededXP(newLevel),
+                        leveledUp
+                    });
+                }
+            );
+        } catch (err) {
+            reject(err);
+        }
+    });
 }
 
-module.exports = { addXP };
+// Volitelné: top XP žebříček
+function getTop(limit = 10) {
+    return new Promise((resolve, reject) => {
+        db.all(
+            `SELECT username, xp, level FROM xp ORDER BY level DESC, xp DESC LIMIT ?`,
+            [limit],
+            (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            }
+        );
+    });
+}
+
+module.exports = {
+    getUser,
+    addXP,
+    getTop,
+    getNeededXP
+};
