@@ -9,7 +9,7 @@ module.exports = {
     name: "lov",
     description: "Zaútočí na náhodného nepřítele a získá loot",
 
-    execute: async (client, channel, user) => {
+    execute: async (client, channel, user, args) => {
         const username = user.username.toLowerCase();
 
         const stats = loadStats();
@@ -19,8 +19,19 @@ module.exports = {
             return client.say(channel, `@${username} ještě nemáš statistiky. Napiš !stats.`);
         }
 
+        // OBTÍŽNOST: easy / medium / hard
+        let difficulty = "medium";
+
+        if (args && args[0]) {
+            const d = args[0].toLowerCase();
+            if (["easy", "medium", "hard"].includes(d)) {
+                difficulty = d;
+            }
+        }
+
         // Vybereme náhodného moba
-        const mob = bestiary[Math.floor(Math.random() * bestiary.length)];
+        const baseMob = bestiary[Math.floor(Math.random() * bestiary.length)];
+        const mob = bestiary.scaleMobDifficulty(baseMob, s.level || 1, difficulty);
 
         // PvE damage výpočet
         const dmgPlayer = Math.max(1, s.strength - (mob.defense || 0));
@@ -40,27 +51,50 @@ module.exports = {
         // Hráč prohrál
         if (hpPlayer <= 0) {
             const msg = playerDeath(username);
-            return client.say(channel, `@${username} ${msg}`);
+            return client.say(channel, `@${username} (${difficulty.toUpperCase()}) ${msg}`);
         }
 
         // Hráč vyhrál
         s.currentHP = hpPlayer;
         saveStats(stats);
 
-        // XP + goldy
-        const xpGain = mob.level * 5;
-        const goldGain = mob.level * 3;
+        // XP + goldy základ
+        let xpGain = mob.level * 5;
+        let goldGain = mob.level * 3;
+
+        if (difficulty === "easy") {
+            xpGain = Math.floor(xpGain * 0.7);
+            goldGain = Math.floor(goldGain * 0.7);
+        }
+
+        if (difficulty === "hard") {
+            xpGain = Math.floor(xpGain * 2.0);
+            goldGain = Math.floor(goldGain * 2.0);
+        }
 
         addXP(username, xpGain);
         addGold(username, goldGain);
 
-        // Loot
-        const drop = mob.drops[Math.floor(Math.random() * mob.drops.length)];
-        addItem(username, drop.name);
+        // DROP S CHANCÍ
+        let dropItem = null;
+
+        if (mob.drops && mob.drops.length > 0) {
+            for (const drop of mob.drops) {
+                if (Math.random() < drop.chance) {
+                    dropItem = drop.name;
+                    break;
+                }
+            }
+        }
+
+        if (dropItem) {
+            addItem(username, dropItem);
+        }
 
         return client.say(
             channel,
-            `@${username} porazil jsi **${mob.name}**! Získáváš +${xpGain} XP, +${goldGain} goldů a item **${drop.name}**.`
+            `@${username} porazil jsi **${mob.name}** (${difficulty.toUpperCase()})! Získáváš +${xpGain} XP, +${goldGain} goldů` +
+            (dropItem ? ` a item **${dropItem}**.` : `, ale tentokrát nic nepadlo.`)
         );
     }
 };
