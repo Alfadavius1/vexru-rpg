@@ -29,7 +29,7 @@ module.exports = {
         // XP systém
         addXP(username, rewardXP);
 
-        client.say(
+        return client.say(
             channel,
             `💼 @${username} pracoval a získal ${rewardGold} gold a ${rewardXP} XP.`
         );
