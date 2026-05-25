@@ -1,73 +1,63 @@
-const Database = require("better-sqlite3");
-const db = new Database("./database.db");
+const fs = require("fs");
+const path = require("path");
 
-// vytvoření tabulky
-db.prepare(`
-CREATE TABLE IF NOT EXISTS xp (
-    username TEXT PRIMARY KEY,
-    xp INTEGER DEFAULT 0,
-    level INTEGER DEFAULT 1
-)
-`).run();
+const xpPath = path.join(__dirname, "..", "data", "xp.json");
 
-// Exponenciální XP křivka
-function getNeededXP(level) {
-    return Math.floor(100 * Math.pow(1.25, level - 1));
+// Načtení XP databáze
+function loadXP() {
+    if (!fs.existsSync(xpPath)) return {};
+    return JSON.parse(fs.readFileSync(xpPath, "utf8"));
 }
 
+// Uložení XP databáze
+function saveXP(db) {
+    fs.writeFileSync(xpPath, JSON.stringify(db, null, 2));
+}
+
+// Získání uživatele
 function getUser(username) {
-    return db.prepare(`SELECT * FROM xp WHERE username = ?`).get(username);
+    const db = loadXP();
+    return db[username] || null;
 }
 
+// Přidání XP
 function addXP(username, amount) {
-    let user = getUser(username);
+    const db = loadXP();
 
-    if (!user) {
-        db.prepare(
-            `INSERT INTO xp (username, xp, level) VALUES (?, ?, ?)`
-        ).run(username, amount, 1);
-
-        return {
-            username,
-            xp: amount,
-            level: 1,
-            needed: getNeededXP(1),
-            leveledUp: false
-        };
+    if (!db[username]) {
+        db[username] = { xp: 0, level: 1 };
     }
 
-    let newXP = user.xp + amount;
-    let newLevel = user.level;
-    let leveledUp = false;
+    db[username].xp += amount;
 
-    while (newXP >= getNeededXP(newLevel)) {
-        newXP -= getNeededXP(newLevel);
-        newLevel++;
-        leveledUp = true;
+    const needed = getNeededXP(db[username].level);
+
+    if (db[username].xp >= needed) {
+        db[username].level++;
+        db[username].xp = 0;
     }
 
-    db.prepare(
-        `UPDATE xp SET xp = ?, level = ? WHERE username = ?`
-    ).run(newXP, newLevel, username);
-
-    return {
-        username,
-        xp: newXP,
-        level: newLevel,
-        needed: getNeededXP(newLevel),
-        leveledUp
-    };
+    saveXP(db);
 }
 
+// XP potřebné na level
+function getNeededXP(level) {
+    return 50 + level * 25;
+}
+
+// TOP žebříček
 function getTop(limit = 10) {
-    return db.prepare(
-        `SELECT username, xp, level FROM xp ORDER BY level DESC, xp DESC LIMIT ?`
-    ).all(limit);
+    const db = loadXP();
+
+    const arr = Object.entries(db).map(([username, data]) => ({
+        username,
+        xp: data.xp,
+        level: data.level
+    }));
+
+    return arr
+        .sort((a, b) => b.level - a.level || b.xp - a.xp)
+        .slice(0, limit);
 }
 
-module.exports = {
-    getUser,
-    addXP,
-    getTop,
-    getNeededXP
-};
+module.exports = { getUser, addXP, getNeededXP, getTop };
