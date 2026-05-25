@@ -33,7 +33,7 @@ module.exports = {
         // XP systém
         addXP(username, rewardXP);
 
-        client.say(
+        return client.say(
             channel,
             `🎁 @${username} získal denní odměnu: ${rewardGold} gold a ${rewardXP} XP.`
         );
