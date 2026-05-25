@@ -1,0 +1,61 @@
+[
+  { "name": "Dřevěný meč", "type": "weapon" },
+  { "name": "Zrezlá dýka", "type": "weapon" },
+  { "name": "Kámen", "type": "weapon" },
+  { "name": "Starý luk", "type": "weapon" },
+  { "name": "Prasklá hůl", "type": "weapon" },
+
+  { "name": "Železný meč", "type": "weapon" },
+  { "name": "Krátká sekera", "type": "weapon" },
+  { "name": "Ocelová dýka", "type": "weapon" },
+  { "name": "Dlouhý luk", "type": "weapon" },
+  { "name": "Magická hůl", "type": "weapon" },
+
+  { "name": "Kožená zbroj", "type": "armor" },
+  { "name": "Plátěná tunika", "type": "armor" },
+  { "name": "Kožené kalhoty", "type": "armor" },
+  { "name": "Kožené boty", "type": "armor" },
+  { "name": "Kožené rukavice", "type": "armor" },
+
+  { "name": "Železná zbroj", "type": "armor" },
+  { "name": "Železné boty", "type": "armor" },
+  { "name": "Železné rukavice", "type": "armor" },
+  { "name": "Železná přilba", "type": "armor" },
+  { "name": "Ocelová zbroj", "type": "armor" },
+
+  { "name": "Starý amulet", "type": "trinket" },
+  { "name": "Zlomený prsten", "type": "trinket" },
+  { "name": "Dřevěný talisman", "type": "trinket" },
+  { "name": "Křišťálový přívěsek", "type": "trinket" },
+  { "name": "Runový kámen", "type": "trinket" },
+
+  { "name": "Surové maso", "type": "material" },
+  { "name": "Vlčí kožešina", "type": "material" },
+  { "name": "Kost", "type": "material" },
+  { "name": "Kus železa", "type": "material" },
+  { "name": "Magický prach", "type": "material" },
+
+  { "name": "Zlatý prsten", "type": "trinket" },
+  { "name": "Stříbrný amulet", "type": "trinket" },
+  { "name": "Rubínový kámen", "type": "material" },
+  { "name": "Smaragdový kámen", "type": "material" },
+  { "name": "Svitky poznání", "type": "material" },
+
+  { "name": "Lovcova kuše", "type": "weapon" },
+  { "name": "Bojová sekera", "type": "weapon" },
+  { "name": "Ocelový kladivo", "type": "weapon" },
+  { "name": "Temná hůl", "type": "weapon" },
+  { "name": "Elfí luk", "type": "weapon" },
+
+  { "name": "Šupinová zbroj", "type": "armor" },
+  { "name": "Temná přilba", "type": "armor" },
+  { "name": "Ocelové chrániče", "type": "armor" },
+  { "name": "Lovcovy boty", "type": "armor" },
+  { "name": "Magická róba", "type": "armor" },
+
+  { "name": "Amulet síly", "type": "trinket" },
+  { "name": "Amulet štěstí", "type": "trinket" },
+  { "name": "Prsten vitality", "type": "trinket" },
+  { "name": "Prsten přesnosti", "type": "trinket" },
+  { "name": "Prsten moudrosti", "type": "trinket" }
+]
