@@ -5,20 +5,33 @@ module.exports = {
     description: "Zobrazí vybavení hráče",
 
     execute: async (client, channel, user) => {
-        const profile = getProfile(user.username.toLowerCase());
+        try {
+            const username = user.username.toLowerCase();
+            const profile = getProfile(username);
 
-        if (!profile) {
-            return client.say(channel, `@${user.username} nemáš profil.`);
+            // Profil neexistuje
+            if (!profile) {
+                return client.say(channel, `@${user.username} nemáš profil.`);
+            }
+
+            const g = profile.gear || {
+                weapon: null,
+                armor: null,
+                trinket: null
+            };
+
+            // Jediná odpověď
+            return client.say(
+                channel,
+                `🛡️ Gear @${user.username}:\n` +
+                `Weapon: ${g.weapon ? `${g.weapon.name} [${g.weapon.rarity}]` : "nic"}\n` +
+                `Armor: ${g.armor ? `${g.armor.name} [${g.armor.rarity}]` : "nic"}\n` +
+                `Trinket: ${g.trinket ? `${g.trinket.name} [${g.trinket.rarity}]` : "nic"}`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !gear:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        const g = profile.gear;
-
-        return client.say(
-            channel,
-            `🛡️ Gear @${user.username}:
-Weapon: ${g.weapon ? g.weapon.name + " [" + g.weapon.rarity + "]" : "nic"}
-Armor: ${g.armor ? g.armor.name + " [" + g.armor.rarity + "]" : "nic"}
-Trinket: ${g.trinket ? g.trinket.name + " [" + g.trinket.rarity + "]" : "nic"}`
-        );
     }
 };
