@@ -18,7 +18,7 @@ module.exports = {
 
         const needed = getNeededXP(data.level);
 
-        client.say(
+        return client.say(
             channel,
             `@${username} • Level: ${data.level} • XP: ${data.xp}/${needed}`
         );
