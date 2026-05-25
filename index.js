@@ -51,6 +51,11 @@ const client = new tmi.Client({
 
 client.connect();
 
+// DEBUG LOG – uvidíš, jestli je bot opravdu v chatu
+client.on("connected", () => {
+    console.log("BOT JE V CHATTU");
+});
+
 // ===============================
 // COMMAND LOADER
 // ===============================
