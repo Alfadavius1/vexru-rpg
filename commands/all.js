@@ -1,44 +1,27 @@
-const fs = require("fs");
-const path = require("path");
-
 module.exports = {
     name: "all",
-    description: "Vypíše všechny dostupné příkazy",
+    description: "Zobrazí všechny zábavné / neherní příkazy",
 
     execute: async (client, channel, user) => {
-        try {
-            const commandsPath = path.join(__dirname);
+        const username = user.username.toLowerCase();
 
-            // Načteme všechny .js soubory v /commands
-            const files = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+        const msg = `
+@${username} zábavné příkazy:
 
-            // Načteme příkazy bezpečně (bez dvojitého require)
-            const commandNames = [];
+🍌 MEME / SRANDA
+• !banan — změří banán
+• !analyza — náhodná analýza
+• !nasranost — procenta nasranosti
+• !ego — ego level
+• !stesti — štěstí
+• !skill — skill level
+• !toxicity — toxicita
+• !power — power level
 
-            for (const file of files) {
-                if (file === "all.js") continue; // neukazuj sám sebe
+🤖 BOT REAKCE
+• @vexru — bot odpoví náhodnou toxic hláškou
+`;
 
-                const cmdPath = path.join(commandsPath, file);
-                const cmd = require(cmdPath);
-
-                if (cmd && cmd.name) {
-                    commandNames.push("!" + cmd.name);
-                }
-            }
-
-            if (commandNames.length === 0) {
-                return client.say(channel, "Žádné příkazy nebyly nalezeny.");
-            }
-
-            // Jediná odpověď
-            return client.say(
-                channel,
-                `📜 Dostupné příkazy: ${commandNames.join(" | ")}`
-            );
-
-        } catch (err) {
-            console.error("Chyba v !all:", err);
-            return client.say(channel, `@${user.username} něco se pokazilo při načítání příkazů.`);
-        }
+        client.say(channel, msg);
     }
 };
