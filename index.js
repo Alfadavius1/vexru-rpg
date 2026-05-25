@@ -1,5 +1,6 @@
 // =======================================
 // VEXRU RPG 2.0 – index.js (Twitch API verze)
+// Stabilní verze s auto-reconnect + heartbeat
 // =======================================
 
 const tmi = require("tmi.js");
@@ -17,7 +18,7 @@ const { getCurrentGame } = require("./core/twitchApi");
 const { loadStats, saveStats } = require("./core/stats");
 
 // =======================================
-// HTTP SERVER PRO RENDER (JEDEN, NE DVA)
+// HTTP SERVER PRO RENDER
 // =======================================
 
 const app = express();
@@ -47,11 +48,15 @@ async function getGameCached() {
 }
 
 // =======================================
-// CLIENT
+// CLIENT – STABILNÍ NASTAVENÍ
 // =======================================
 
 const client = new tmi.Client({
   options: { debug: false },
+  connection: {
+    reconnect: true,     // AUTO RECONNECT
+    secure: true
+  },
   identity: {
     username: BOT_USERNAME,
     password: OAUTH_TOKEN
@@ -59,10 +64,30 @@ const client = new tmi.Client({
   channels: [CHANNEL_NAME]
 });
 
-client.connect();
+// Připojení
+client.connect().catch(err => console.error("Chyba připojení:", err));
 
 client.on("connected", () => {
   console.log("BOT JE V CHATTU A PŘIHLÁŠENÝ");
+});
+
+// =======================================
+// HEARTBEAT – aby Twitch neodpojoval
+// =======================================
+
+setInterval(() => {
+  client.ping().catch(() => {});
+  console.log("Heartbeat ping sent");
+}, 1000 * 60 * 5); // každých 5 minut
+
+// =======================================
+// AUTO RECONNECT LOG
+// =======================================
+
+client.on("disconnected", (reason) => {
+  console.log("Bot byl odpojen:", reason);
+  console.log("Zkouším reconnect...");
+  client.connect().catch(() => {});
 });
 
 // =======================================
@@ -131,7 +156,7 @@ client.on("message", async (channel, user, message, self) => {
     return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
   }
 
-  // GAME REACTIONS (JEN KDYŽ NIC JINÉHO NEODPOVĚDĚLO)
+  // GAME REACTIONS
   const game = await getGameCached();
   if (game) {
     const g = game.toLowerCase();
