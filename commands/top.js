@@ -18,6 +18,6 @@ module.exports = {
         });
 
         // Twitch neumí multiline → pošleme to jako jeden řádek
-        client.say(channel, msg.replace(/\n/g, " | "));
+        return client.say(channel, msg.replace(/\n/g, " | "));
     }
 };
