@@ -5,15 +5,24 @@ module.exports = {
     description: "Ukáže rank hráče",
 
     execute: async (client, channel, user) => {
-        const profile = getProfile(user.username.toLowerCase());
+        try {
+            const username = user.username.toLowerCase();
+            const profile = getProfile(username);
 
-        if (!profile) {
-            return client.say(channel, `@${user.username} nemáš profil.`);
+            // Profil neexistuje
+            if (!profile) {
+                return client.say(channel, `@${user.username} nemáš profil.`);
+            }
+
+            // Jediná odpověď
+            return client.say(
+                channel,
+                `🏆 @${user.username} má hodnost: **${profile.rank}**`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !hodnost:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        return client.say(
-            channel,
-            `🏆 @${user.username} má hodnost: ${profile.rank}`
-        );
     }
 };
