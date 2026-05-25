@@ -4,6 +4,7 @@
 
 const tmi = require("tmi.js");
 const fs = require("fs");
+const http = require("http");
 
 // AI modul
 const { getAIResponse } = require("./core/aiResponses");
@@ -16,7 +17,6 @@ const { getCurrentGame } = require("./core/twitchApi");
 // FALEŠNÝ HTTP SERVER PRO RENDER (DŮLEŽITÉ)
 // =======================================
 
-const http = require("http");
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end("OK");
@@ -36,12 +36,12 @@ let lastGame = null;
 let lastGameCheck = 0;
 
 async function getGameCached() {
-    const now = Date.now();
-    if (!lastGame || now - lastGameCheck > 60 * 1000) {
-        lastGame = await getCurrentGame(STREAMER_LOGIN);
-        lastGameCheck = now;
-    }
-    return lastGame;
+  const now = Date.now();
+  if (!lastGame || now - lastGameCheck > 60 * 1000) {
+    lastGame = await getCurrentGame(STREAMER_LOGIN);
+    lastGameCheck = now;
+  }
+  return lastGame;
 }
 
 // =======================================
@@ -49,18 +49,18 @@ async function getGameCached() {
 // =======================================
 
 const client = new tmi.Client({
-    options: { debug: false },
-    identity: {
-        username: BOT_USERNAME,
-        password: OAUTH_TOKEN
-    },
-    channels: [CHANNEL_NAME]
+  options: { debug: false },
+  identity: {
+    username: BOT_USERNAME,
+    password: OAUTH_TOKEN
+  },
+  channels: [CHANNEL_NAME]
 });
 
 client.connect();
 
 client.on("connected", () => {
-    console.log("BOT JE V CHATTU A PŘIHLÁŠENÝ");
+  console.log("BOT JE V CHATTU A PŘIHLÁŠENÝ");
 });
 
 // =======================================
@@ -71,81 +71,82 @@ const commands = new Map();
 const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
 
 for (const file of commandFiles) {
-    const cmd = require(`./commands/${file}`);
-    commands.set(cmd.name, cmd);
-    console.log(`Loaded command: ${cmd.name}`);
+  const cmd = require(`./commands/${file}`);
+  commands.set(cmd.name, cmd);
+  console.log(`Loaded command: ${cmd.name}`);
 }
 
 // =======================================
-// MESSAGE HANDLER
+// MESSAGE HANDLER (OPRAVENÝ – ŽÁDNÉ 2× ODPOVĚDI)
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
-    if (self) return;
+  if (self) return;
 
-    const username = user.username.toLowerCase();
+  const username = user.username.toLowerCase();
+  const msg = message.toLowerCase();
 
-    // COMMANDS
-    if (message.startsWith("!")) {
-        const args = message.slice(1).split(" ");
-        const cmdName = args.shift().toLowerCase();
+  // COMMANDS
+  if (msg.startsWith("!")) {
+    const args = msg.slice(1).split(" ");
+    const cmdName = args.shift().toLowerCase();
 
-        const cmd = commands.get(cmdName);
-        if (cmd) {
-            try {
-                await cmd.execute(client, channel, user, args);
-            } catch (err) {
-                console.error(err);
-                client.say(channel, `@${username} něco se pokazilo.`);
-            }
-        }
-        return;
+    const cmd = commands.get(cmdName);
+    if (cmd) {
+      try {
+        await cmd.execute(client, channel, user, args);
+      } catch (err) {
+        console.error(err);
+        client.say(channel, `@${username} něco se pokazilo.`);
+      }
+    }
+    return;
+  }
+
+  // PRIORITA 1 — BOT NAME
+  if (msg.includes("vexru")) {
+    const profile = getProfile(username);
+    let extra = "";
+
+    if (profile) {
+      if (profile.level <= 3) extra = "máš level jak mimino.";
+      else if (profile.level >= 10) extra = "už jsi skoro boss.";
+      else extra = "pracuj na sobě dál.";
     }
 
-    // AI – BOT NAME
-    if (message.toLowerCase().includes("vexru")) {
-        const profile = getProfile(username);
-        let extra = "";
+    const ai = getAIResponse();
+    return client.say(channel, `@${username} ${ai} ${extra}`);
+  }
 
-        if (profile) {
-            if (profile.level <= 3) extra = "máš level jak mimino.";
-            else if (profile.level >= 10) extra = "už jsi skoro boss.";
-            else extra = "pracuj na sobě dál.";
-        }
+  // PRIORITA 2 — QUESTIONS
+  if (msg.endsWith("?")) {
+    const ai = getAIResponse();
+    return client.say(channel, `@${username} ${ai}`);
+  }
 
-        const ai = getAIResponse();
-        return client.say(channel, `@${username} ${ai} ${extra}`);
+  // SPAM
+  if (/([a-zA-Z])\1\1/.test(msg)) {
+    return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
+  }
+
+  // GAME REACTIONS
+  const game = await getGameCached();
+  if (game) {
+    const g = game.toLowerCase();
+
+    if (g.includes("tarkov")) {
+      client.say(channel, `🔫 Tarkov? Šance na přežití: 12 %, tilt: 98 %.`);
     }
-
-    // AI – QUESTIONS
-    if (message.endsWith("?")) {
-        const ai = getAIResponse();
-        return client.say(channel, `@${username} ${ai}`);
+    if (g.includes("cs2") || g.includes("counter-strike")) {
+      client.say(channel, `🎯 CS2? Aim dneska spí jak medvěd.`);
     }
-
-    // AI – SPAM
-    if (/([a-zA-Z])\1\1/.test(message)) {
-        return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
+    if (g.includes("fortnite")) {
+      client.say(channel, `🏗️ Fortnite? To je dětská verze Tarkova.`);
     }
-
-    // AI – GAME REACTIONS
-    const game = await getGameCached();
-    if (game) {
-        const g = game.toLowerCase();
-
-        if (g.includes("tarkov")) {
-            client.say(channel, `🔫 Tarkov? Šance na přežití: 12 %, tilt: 98 %.`);
-        }
-        if (g.includes("cs2") || g.includes("counter-strike")) {
-            client.say(channel, `🎯 CS2? Aim dneska spí jak medvěd.`);
-        }
-        if (g.includes("fortnite")) {
-            client.say(channel, `🏗️ Fortnite? To je dětská verze Tarkova.`);
-        }
-        if (g.includes("outlast")) {
-            client.say(channel, `😱 Outlast? Doufám, že máš čistý trenky.`);
-        }
+    if (g.includes("outlast")) {
+      client.say(channel, `😱 Outlast? Doufám, že máš čistý trenky.`);
     }
+  }
 });
 
 // =======================================
@@ -153,7 +154,7 @@ client.on("message", async (channel, user, message, self) => {
 // =======================================
 
 setInterval(() => {
-    client.say(CHANNEL_NAME, "!all");
+  client.say(CHANNEL_NAME, "!all");
 }, 20 * 60 * 1000);
 
 console.log("Vexru RPG 2.0 (Twitch API verze) běží...");
