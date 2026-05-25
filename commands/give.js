@@ -1,4 +1,3 @@
-// commands/give.js
 const fs = require("fs");
 const path = require("path");
 const { addItem } = require("../core/inventory.js");
@@ -19,6 +18,7 @@ function saveDB(db) {
 module.exports = {
     name: "give",
     description: "Dá item jinému hráči",
+
     execute: async (client, channel, user, args) => {
         const sender = user.username.toLowerCase();
         const receiver = args[0]?.toLowerCase();
@@ -53,6 +53,9 @@ module.exports = {
 
         saveDB(db);
 
-        client.say(channel, `🎁 @${user.username} dal item **${item.name}** hráči @${receiver}`);
+        return client.say(
+            channel,
+            `🎁 @${user.username} dal item **${item.name}** hráči @${receiver}`
+        );
     }
 };
