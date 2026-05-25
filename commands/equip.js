@@ -20,54 +20,73 @@ module.exports = {
     description: "Nasadí item z inventáře",
 
     execute: async (client, channel, user, args) => {
-        const username = user.username.toLowerCase();
-        const db = loadDB();
+        try {
+            const username = user.username.toLowerCase();
+            const db = loadDB();
 
-        if (!db[username]) {
-            return client.say(channel, `@${user.username} nemáš profil. Použij !profil.`);
+            // Profil neexistuje
+            if (!db[username]) {
+                return client.say(channel, `@${user.username} nemáš profil. Použij !profil.`);
+            }
+
+            const slot = args[0]?.toLowerCase();
+            const itemName = args.slice(1).join(" ");
+
+            // Chybné použití
+            if (!slot || !itemName) {
+                return client.say(
+                    channel,
+                    `@${user.username} použití: !equip <weapon|armor|trinket> <název itemu>`
+                );
+            }
+
+            // Neplatný slot
+            if (!["weapon", "armor", "trinket"].includes(slot)) {
+                return client.say(
+                    channel,
+                    `@${user.username} neplatný slot. Použij weapon / armor / trinket.`
+                );
+            }
+
+            const inv = db[username].inventory || [];
+
+            // Najdeme item v inventáři
+            const item = inv.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+
+            if (!item) {
+                return client.say(channel, `@${user.username} tento item nemáš v inventáři.`);
+            }
+
+            // Gear inicializace
+            db[username].gear ??= { weapon: null, armor: null, trinket: null };
+
+            // Starý item
+            const previous = db[username].gear[slot];
+
+            // Nasadíme nový
+            db[username].gear[slot] = item;
+
+            // Odebereme z inventáře
+            db[username].inventory = inv.filter(i => i !== item);
+
+            // Pokud tam byl starý item → vrátíme ho zpět
+            if (previous) {
+                db[username].inventory.push(previous);
+            }
+
+            saveDB(db);
+
+            const info = getRarityInfo(item.rarity) || { buffs: {} };
+
+            return client.say(
+                channel,
+                `🛡️ @${user.username} nasadil **${item.rarity}** ${item.name} (${slot}) | ` +
+                `DMG +${info.buffs.dmg || 0}, XP +${info.buffs.xp || 0}, LUCK +${info.buffs.luck || 0}`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !equip:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        const slot = args[0]?.toLowerCase();
-        const itemName = args.slice(1).join(" ");
-
-        if (!slot || !itemName) {
-            return client.say(channel, `@${user.username} použití: !equip <weapon|armor|trinket> <název itemu>`);
-        }
-
-        if (!["weapon", "armor", "trinket"].includes(slot)) {
-            return client.say(channel, `@${user.username} neplatný slot. Použij weapon / armor / trinket.`);
-        }
-
-        const inv = db[username].inventory || [];
-
-        // Najdeme item v inventáři
-        const item = inv.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-
-        if (!item) {
-            return client.say(channel, `@${user.username} tento item nemáš v inventáři.`);
-        }
-
-        // Nasadíme item
-        db[username].gear ??= { weapon: null, armor: null, trinket: null };
-
-        const previous = db[username].gear[slot];
-        db[username].gear[slot] = item;
-
-        // Odebereme item z inventáře
-        db[username].inventory = inv.filter(i => i !== item);
-
-        // Pokud tam byl starý item → vrátíme ho do inventáře
-        if (previous) {
-            db[username].inventory.push(previous);
-        }
-
-        saveDB(db);
-
-        const info = getRarityInfo(item.rarity);
-
-        return client.say(
-            channel,
-            `🛡️ @${user.username} nasadil **${item.rarity}** ${item.name} (${slot}) | DMG +${info.buffs.dmg}, XP +${info.buffs.xp}, LUCK +${info.buffs.luck}`
-        );
     }
 };
