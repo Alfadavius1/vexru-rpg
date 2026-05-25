@@ -1,40 +1,32 @@
-const Database = require("better-sqlite3");
-const db = new Database("./database.db");
+const fs = require("fs");
 
-// tabulka cooldownů
-db.prepare(`
-CREATE TABLE IF NOT EXISTS cooldowns (
-    username TEXT,
-    command TEXT,
-    last_used INTEGER
-)
-`).run();
+const file = "./data/cooldowns.json";
+
+// vytvoření souboru pokud neexistuje
+if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, JSON.stringify({}, null, 2));
+}
 
 function checkCooldown(username, command, seconds) {
-    const row = db.prepare(
-        `SELECT last_used FROM cooldowns WHERE username = ? AND command = ?`
-    ).get(username, command);
+    const db = JSON.parse(fs.readFileSync(file));
 
-    const now = Date.now();
-
-    if (!row) {
-        db.prepare(
-            `INSERT INTO cooldowns (username, command, last_used) VALUES (?, ?, ?)`
-        ).run(username, command, now);
-        return 0; // žádný cooldown
+    if (!db[username]) db[username] = {};
+    if (!db[username][command]) {
+        db[username][command] = Date.now();
+        fs.writeFileSync(file, JSON.stringify(db, null, 2));
+        return 0;
     }
 
-    const diff = Math.floor((now - row.last_used) / 1000);
+    const last = db[username][command];
+    const now = Date.now();
+    const diff = Math.floor((now - last) / 1000);
 
     if (diff < seconds) {
-        return seconds - diff; // zbývající sekundy
+        return seconds - diff;
     }
 
-    // cooldown vypršel → reset
-    db.prepare(
-        `UPDATE cooldowns SET last_used = ? WHERE username = ? AND command = ?`
-    ).run(now, username, command);
-
+    db[username][command] = now;
+    fs.writeFileSync(file, JSON.stringify(db, null, 2));
     return 0;
 }
 
