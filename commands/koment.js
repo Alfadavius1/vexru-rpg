@@ -6,26 +6,39 @@ module.exports = {
     description: "AI komentuje hru, kterou streamer hraje",
 
     execute: async (client, channel, user) => {
-        const ai = getAIResponse();
+        try {
+            // AI reakce (friendly / toxic / wise / chaotic)
+            const ai = getAIResponse(user.username.toLowerCase());
 
-        // Twitch login streamera
-        const game = await getCurrentGame("alfadavius1");
+            // ⭐ OPRAVA: Twitch API musí být await
+            const game = await getCurrentGame("alfadavius1");
 
-        let line = "nevím, co hraješ, ale vypadá to chaoticky.";
+            let line = "nevím, co hraješ, ale vypadá to chaoticky.";
 
-        if (game) {
-            const g = game.toLowerCase();
+            if (game) {
+                const g = game.toLowerCase();
 
-            if (g.includes("escape from tarkov")) line = "Tarkov? Šance na přežití: 12 %, tilt: 98 %.";
-            else if (g.includes("counter-strike") || g.includes("cs2")) line = "CS2? Aim dneska spí jak medvěd.";
-            else if (g.includes("fortnite")) line = "Fortnite? To je dětská verze Tarkova.";
-            else if (g.includes("outlast")) line = "Outlast? Doufám, že máš čistý trenky.";
-            else line = `hraješ ${game}, tohle bude zajímavý.`;
+                if (g.includes("escape from tarkov"))
+                    line = "Tarkov? Šance na přežití: 12 %, tilt: 98 %.";
+                else if (g.includes("counter-strike") || g.includes("cs2"))
+                    line = "CS2? Aim dneska spí jak medvěd.";
+                else if (g.includes("fortnite"))
+                    line = "Fortnite? To je dětská verze Tarkova.";
+                else if (g.includes("outlast"))
+                    line = "Outlast? Doufám, že máš čistý trenky.";
+                else
+                    line = `hraješ ${game}, tohle bude zajímavý.`;
+            }
+
+            // ⭐ Jediná odpověď
+            return client.say(
+                channel,
+                `🎮 @${user.username} komentář: ${line} (${ai})`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !koment:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        return client.say(
-            channel,
-            `🎮 @${user.username} komentář: ${line} (${ai})`
-        );
     }
 };
