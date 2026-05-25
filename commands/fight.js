@@ -1,102 +1,79 @@
-const path = require("path");
-const fs = require("fs");
-
-const { getProfile } = require(path.join(__dirname, "../core/profile.js"));
-const { addXP } = require(path.join(__dirname, "../core/xp.js"));
-const { getAIResponse } = require(path.join(__dirname, "../core/aiResponses.js"));
-const { checkCooldown } = require(path.join(__dirname, "../core/cooldowns.js"));
+const { loadStats, saveStats } = require("../core/stats");
+const { getUser, addXP } = require("../core/xp");
+const { addGold } = require("../core/gold");
+const { applyDeath } = require("../core/stats");
 
 module.exports = {
     name: "fight",
-    description: "Souboj mezi dvěma hráči",
+    description: "PvP souboj mezi dvěma hráči",
 
     execute: async (client, channel, user, args) => {
-        try {
-            const attackerName = user.username.toLowerCase();
+        const attacker = user.username.toLowerCase();
 
-            // ⭐ OPRAVA: Cooldown musí být AWAIT
-            const cd = await checkCooldown(attackerName, "fight", 20);
-            if (cd > 0) {
-                return client.say(channel, `@${user.username} počkej ještě ${cd}s.`);
-            }
-
-            // Musí označit hráče
-            if (!args[0] || !args[0].startsWith("@")) {
-                return client.say(channel, `@${user.username} musíš napsat: !fight @hrac`);
-            }
-
-            const targetName = args[0].replace("@", "").toLowerCase();
-
-            if (attackerName === targetName) {
-                return client.say(channel, `@${user.username} nemůžeš fightit sám sebe.`);
-            }
-
-            const attacker = getProfile(attackerName);
-            const defender = getProfile(targetName);
-
-            if (!attacker) {
-                return client.say(channel, `@${user.username} nemáš profil. Zkus !lov.`);
-            }
-            if (!defender) {
-                return client.say(channel, `@${targetName} nemá profil.`);
-            }
-
-            // Výpočet síly
-            const atkPower = attacker.stats.dmg + attacker.buffs.dmg;
-            const defPower = defender.stats.dmg + defender.buffs.dmg;
-
-            // Luck ovlivní RNG
-            const atkLuck = attacker.stats.luck + attacker.buffs.luck;
-            const defLuck = defender.stats.luck + defender.buffs.luck;
-
-            // Kritiky
-            const atkCrit = Math.random() < atkLuck / 100 ? 1.5 : 1;
-            const defCrit = Math.random() < defLuck / 100 ? 1.5 : 1;
-
-            // Finální damage s RNG
-            const atkFinal = atkPower * atkCrit * (0.8 + Math.random() * 0.4);
-            const defFinal = defPower * defCrit * (0.8 + Math.random() * 0.4);
-
-            let winner, loser;
-
-            if (atkFinal > defFinal) {
-                winner = attackerName;
-                loser = targetName;
-            } else {
-                winner = targetName;
-                loser = attackerName;
-            }
-
-            // Odměny
-            const xpReward = Math.floor(Math.random() * 10) + 5;
-            const goldReward = Math.floor(Math.random() * 8) + 3;
-
-            // Uložení goldů
-            const dbPath = path.join(__dirname, "../data/users.json");
-            const raw = fs.readFileSync(dbPath, "utf8").trim();
-            const db = raw ? JSON.parse(raw) : {};
-
-            db[winner].gold = (db[winner].gold || 0) + goldReward;
-
-            fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-
-            // XP
-            addXP(winner, xpReward);
-
-            // AI komentář
-            const comment = getAIResponse(winner);
-
-            // ⭐ Jediná odpověď
-            return client.say(
-                channel,
-                `⚔️ Souboj: @${attackerName} vs @${targetName}\n` +
-                `Vítěz: @${winner} 🎉 | XP +${xpReward}, Gold +${goldReward}\n` +
-                `Komentář: ${comment}`
-            );
-
-        } catch (err) {
-            console.error("Chyba v !fight:", err);
-            return client.say(channel, `@${user.username} něco se pokazilo.`);
+        if (!args[0]) {
+            return client.say(channel, `@${attacker} napiš hráče, kterého chceš vyzvat. Např.: !fight jmeno`);
         }
+
+        const defender = args[0].replace("@", "").toLowerCase();
+
+        if (attacker === defender) {
+            return client.say(channel, `@${attacker} nemůžeš bojovat sám se sebou.`);
+        }
+
+        const stats = loadStats();
+
+        if (!stats[attacker] || !stats[defender]) {
+            return client.say(channel, `@${attacker} oba hráči musí mít statistiky.`);
+        }
+
+        const A = stats[attacker];
+        const D = stats[defender];
+
+        // PvP povoleno jen při plných HP
+        if (A.currentHP < A.hp) {
+            return client.say(channel, `@${attacker} nemáš plné HP. PvP je možné jen s plnými HP.`);
+        }
+
+        if (D.currentHP < D.hp) {
+            return client.say(channel, `@${attacker} hráč @${defender} nemá plné HP. PvP nelze zahájit.`);
+        }
+
+        // Výpočet damage
+        const dmgA = Math.max(1, A.strength - D.defense);
+        const dmgD = Math.max(1, D.strength - A.defense);
+
+        // Simulace boje
+        let hpA = A.hp;
+        let hpD = D.hp;
+
+        while (hpA > 0 && hpD > 0) {
+            hpD -= dmgA;
+            if (hpD <= 0) break;
+
+            hpA -= dmgD;
+        }
+
+        let winner, loser;
+
+        if (hpA > 0) {
+            winner = attacker;
+            loser = defender;
+        } else {
+            winner = defender;
+            loser = attacker;
+        }
+
+        // Odměny vítězi
+        addXP(winner, 20);
+        addGold(winner, 15);
+
+        // Poražený → HP na 25 %
+        stats[loser].currentHP = Math.floor(stats[loser].hp * 0.25);
+        saveStats(stats);
+
+        return client.say(
+            channel,
+            `🥊 PvP souboj: @${attacker} vs @${defender} → vítěz je **@${winner}**! (+20 XP, +15 goldů) | @${loser} padl a má nyní 25 % HP.`
+        );
     }
 };
