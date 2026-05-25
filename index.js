@@ -27,7 +27,7 @@ http.createServer((req, res) => {
 // =======================================
 
 const BOT_USERNAME = "vexru";
-const OAUTH_TOKEN = "oauth:rxypa2cz9eif4totvgkaz8emkcfn5m";
+const OAUTH_TOKEN = "oauth:rqp44bbm9fcsusuvel7xpzvh73r27w";
 const CHANNEL_NAME = "#alfadavius1";
 const STREAMER_LOGIN = "alfadavius1";
 
