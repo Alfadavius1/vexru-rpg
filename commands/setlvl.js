@@ -1,9 +1,9 @@
-// commands/setlvl.js
 const fs = require("fs");
 
 module.exports = {
     name: "setlvl",
     description: "Admin: nastaví level hráče",
+
     execute: async (client, channel, user, args) => {
 
         // Admin check
@@ -29,10 +29,10 @@ module.exports = {
         }
 
         db[target].level = level;
-        db[target].xp = 0; // reset XP při ručním nastavení levelu (bezpečné)
+        db[target].xp = 0; // reset XP při ručním nastavení levelu
 
         fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
 
-        client.say(channel, `📈 Admin nastavil @${target} level na ${level}.`);
+        return client.say(channel, `📈 Admin nastavil @${target} level na ${level}.`);
     }
 };
