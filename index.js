@@ -13,6 +13,9 @@ const { getProfile } = require("./core/profile");
 // Twitch API modul
 const { getCurrentGame } = require("./core/twitchApi");
 
+// RPG – staty (kvůli regeneraci HP)
+const { loadStats, saveStats } = require("./core/stats");
+
 // =======================================
 // HTTP SERVER PRO RENDER (JEDEN, NE DVA)
 // =======================================
@@ -152,5 +155,33 @@ client.on("message", async (channel, user, message, self) => {
 setInterval(() => {
   client.say(CHANNEL_NAME, "!all");
 }, 20 * 60 * 1000);
+
+// =======================================
+// AUTOMATICKÁ REGENERACE HP KAŽDÝCH 10 SEKUND
+// =======================================
+
+setInterval(() => {
+  const stats = loadStats();
+  let changed = false;
+
+  for (const user in stats) {
+    const s = stats[user];
+
+    if (s.currentHP < s.hp) {
+      const regen = Math.ceil(s.hp * 0.01); // 1 % max HP
+      s.currentHP += regen;
+
+      if (s.currentHP > s.hp) {
+        s.currentHP = s.hp;
+      }
+
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    saveStats(stats);
+  }
+}, 10000);
 
 console.log("Vexru RPG 2.0 (Twitch API verze) běží...");
