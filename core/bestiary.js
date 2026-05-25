@@ -1,6 +1,24 @@
-module.exports = [
+function scaleMobDifficulty(mob, playerLevel, difficulty) {
+    let multiplier = 1;
+
+    if (difficulty === "easy") multiplier = 0.8;
+    if (difficulty === "medium") multiplier = 1.0;
+    if (difficulty === "hard") multiplier = 1.5;
+
+    const scale = (playerLevel / mob.level) * multiplier;
+
+    return {
+        ...mob,
+        level: Math.max(1, Math.floor(playerLevel * multiplier)),
+        hp: Math.max(1, Math.floor(mob.hp * scale)),
+        damage: Math.max(1, Math.floor(mob.damage * scale)),
+        defense: Math.max(0, Math.floor(mob.defense * scale))
+    };
+}
+
+const bestiary = [
     // ============================
-    // COMMON MOBY (snadní)
+    // COMMON MOBY
     // ============================
     {
         name: "Lesní vlk",
@@ -54,7 +72,7 @@ module.exports = [
     },
 
     // ============================
-    // RARE MOBY (silnější)
+    // RARE MOBY
     // ============================
     {
         name: "Temný lovec",
@@ -97,7 +115,7 @@ module.exports = [
     },
 
     // ============================
-    // EPIC MOBY (nebezpeční)
+    // EPIC MOBY
     // ============================
     {
         name: "Ohnivý elementál",
@@ -140,7 +158,7 @@ module.exports = [
     },
 
     // ============================
-    // LEGENDARY BOSSES (těžcí)
+    // LEGENDARY BOSSES
     // ============================
     {
         name: "Král lesa — Gromar",
@@ -185,3 +203,6 @@ module.exports = [
         ]
     }
 ];
+
+module.exports = bestiary;
+module.exports.scaleMobDifficulty = scaleMobDifficulty;
