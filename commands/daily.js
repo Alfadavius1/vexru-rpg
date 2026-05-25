@@ -1,4 +1,3 @@
-// commands/daily.js
 const cooldowns = require("../core/cooldowns.js");
 const path = require("path");
 const { addXP } = require(path.join(__dirname, "../core/xp.js"));
@@ -7,30 +6,36 @@ const fs = require("fs");
 module.exports = {
     name: "daily",
     description: "Denní odměna",
+
     execute: async (client, channel, user) => {
+        const username = user.username.toLowerCase();
 
         // 24 hodin cooldown
-        const cd = checkCooldown(user.username, "daily", 86400);
-        if (cd) {
-            return client.say(channel, `@${user.username} už sis dnešní daily vybral.`);
+        const cd = cooldowns.checkCooldown(username, "daily", 86400);
+        if (cd > 0) {
+            return client.say(
+                channel,
+                `@${username} už sis dnešní daily vybral. Zkus to za ${cd}s.`
+            );
         }
 
         const rewardGold = 50;
         const rewardXP = 10;
 
+        // JSON databáze
         const db = JSON.parse(fs.readFileSync("./data/users.json"));
-        const key = user.username.toLowerCase();
+        if (!db[username]) db[username] = {};
 
-        if (!db[key]) db[key] = {};
+        db[username].gold = (db[username].gold || 0) + rewardGold;
 
-        db[key].gold = (db[key].gold || 0) + rewardGold;
         fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
 
-        addXP(user.username, rewardXP);
+        // XP systém
+        addXP(username, rewardXP);
 
         client.say(
             channel,
-            `🎁 @${user.username} získal denní odměnu: ${rewardGold} gold a ${rewardXP} XP.`
+            `🎁 @${username} získal denní odměnu: ${rewardGold} gold a ${rewardXP} XP.`
         );
     }
 };
