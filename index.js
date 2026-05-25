@@ -158,3 +158,8 @@ setInterval(() => {
 }, 20 * 60 * 1000);
 
 console.log("Vexru RPG 2.0 (Twitch API verze) běží...");
+const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => res.send("Vexru běží."));
+app.listen(process.env.PORT || 3000);
