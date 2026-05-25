@@ -1,15 +1,14 @@
-// commands/koment.js
 const { getAIResponse } = require("../core/aiResponses");
 const { getCurrentGame } = require("../core/twitchApi");
 
 module.exports = {
     name: "koment",
     description: "AI komentuje hru, kterou streamer hraje",
-    execute: async (client, channel, user) => {
 
+    execute: async (client, channel, user) => {
         const ai = getAIResponse();
 
-        // ZDE DOSAĎ SVŮJ TWITCH LOGIN (malými písmeny)
+        // Twitch login streamera
         const game = await getCurrentGame("alfadavius1");
 
         let line = "nevím, co hraješ, ale vypadá to chaoticky.";
@@ -24,7 +23,7 @@ module.exports = {
             else line = `hraješ ${game}, tohle bude zajímavý.`;
         }
 
-        client.say(
+        return client.say(
             channel,
             `🎮 @${user.username} komentář: ${line} (${ai})`
         );
