@@ -1,43 +1,58 @@
 // commands/give.js
-const { addItem } = require("../data/inventory");
-const { getRarityInfo } = require("../data/rarity");
+const fs = require("fs");
+const path = require("path");
+const { addItem } = require("../core/inventory.js");
+
+const usersPath = path.join(__dirname, "..", "data", "users.json");
+
+function loadDB() {
+    if (!fs.existsSync(usersPath)) return {};
+    const raw = fs.readFileSync(usersPath, "utf8").trim();
+    if (!raw) return {};
+    return JSON.parse(raw);
+}
+
+function saveDB(db) {
+    fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
+}
 
 module.exports = {
     name: "give",
-    description: "Admin: dá hráči item",
+    description: "Dá item jinému hráči",
     execute: async (client, channel, user, args) => {
+        const sender = user.username.toLowerCase();
+        const receiver = args[0]?.toLowerCase();
+        const itemName = args.slice(1).join(" ");
 
-        // Admin check
-        if (user.username.toLowerCase() !== "martin") {
-            return client.say(channel, `@${user.username} nemáš oprávnění.`);
+        if (!receiver || !itemName) {
+            return client.say(channel, `@${user.username} použití: !give <hráč> <item>`);
         }
 
-        if (!args[0] || !args[1]) {
-            return client.say(channel, `Použití: !give @hrac NazevItemu Rarity`);
+        const db = loadDB();
+
+        if (!db[sender]) {
+            return client.say(channel, `@${user.username} nemáš profil.`);
         }
 
-        const target = args[0].replace("@", "").toLowerCase();
-        const itemName = args[1];
-        const rarity = args[2] || "Common";
-
-        const info = getRarityInfo(rarity);
-        if (!info) {
-            return client.say(channel, `Neplatná rarita.`);
+        if (!db[receiver]) {
+            return client.say(channel, `@${user.username} hráč ${receiver} neexistuje.`);
         }
 
-        const item = {
-            name: itemName,
-            rarity,
-            color: info.color,
-            buffs: info.buffs
-        };
+        const inv = db[sender].inventory || [];
+        const item = inv.find(i => i.name.toLowerCase() === itemName.toLowerCase());
 
-        addItem(target, item);
+        if (!item) {
+            return client.say(channel, `@${user.username} tento item nemáš.`);
+        }
 
-        client.say(
-            channel,
-            `🛠️ Admin dal hráči @${target} item: ${itemName} [${rarity}]`
-        );
+        // Odebrat item od odesílatele
+        db[sender].inventory = inv.filter(i => i !== item);
+
+        // Přidat item příjemci
+        addItem(receiver, item);
+
+        saveDB(db);
+
+        client.say(channel, `🎁 @${user.username} dal item **${item.name}** hráči @${receiver}`);
     }
 };
-
