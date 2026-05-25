@@ -1,63 +1,21 @@
-const fs = require("fs");
-const path = require("path");
+const { getUser, getNeededXP } = require("../core/xp");
 
-const xpPath = path.join(__dirname, "..", "data", "xp.json");
+module.exports = {
+    name: "xp",
 
-// Načtení XP databáze
-function loadXP() {
-    if (!fs.existsSync(xpPath)) return {};
-    return JSON.parse(fs.readFileSync(xpPath, "utf8"));
-}
+    execute: async (client, channel, user) => {
+        const username = user.username.toLowerCase();
+        const data = getUser(username);
 
-// Uložení XP databáze
-function saveXP(db) {
-    fs.writeFileSync(xpPath, JSON.stringify(db, null, 2));
-}
+        if (!data) {
+            return client.say(channel, `@${username} zatím nemáš žádné XP.`);
+        }
 
-// Získání uživatele
-function getUser(username) {
-    const db = loadXP();
-    return db[username] || null;
-}
+        const needed = getNeededXP(data.level);
 
-// Přidání XP
-function addXP(username, amount) {
-    const db = loadXP();
-
-    if (!db[username]) {
-        db[username] = { xp: 0, level: 1 };
+        return client.say(
+            channel,
+            `@${username} • Level: ${data.level} • XP: ${data.xp}/${needed}`
+        );
     }
-
-    db[username].xp += amount;
-
-    const needed = getNeededXP(db[username].level);
-
-    if (db[username].xp >= needed) {
-        db[username].level++;
-        db[username].xp = 0;
-    }
-
-    saveXP(db);
-}
-
-// XP potřebné na level
-function getNeededXP(level) {
-    return 50 + level * 25;
-}
-
-// TOP žebříček
-function getTop(limit = 10) {
-    const db = loadXP();
-
-    const arr = Object.entries(db).map(([username, data]) => ({
-        username,
-        xp: data.xp,
-        level: data.level
-    }));
-
-    return arr
-        .sort((a, b) => b.level - a.level || b.xp - a.xp)
-        .slice(0, limit);
-}
-
-module.exports = { getUser, addXP, getNeededXP, getTop };
+};
