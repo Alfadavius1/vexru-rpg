@@ -4,7 +4,7 @@
 
 const tmi = require("tmi.js");
 const fs = require("fs");
-const http = require("http");
+const express = require("express");
 
 // AI modul
 const { getAIResponse } = require("./core/aiResponses");
@@ -14,13 +14,12 @@ const { getProfile } = require("./core/profile");
 const { getCurrentGame } = require("./core/twitchApi");
 
 // =======================================
-// FALEŠNÝ HTTP SERVER PRO RENDER (DŮLEŽITÉ)
+// HTTP SERVER PRO RENDER (JEDEN, NE DVA)
 // =======================================
 
-http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end("OK");
-}).listen(process.env.PORT || 3000);
+const app = express();
+app.get("/", (req, res) => res.send("Vexru běží."));
+app.listen(process.env.PORT || 3000);
 
 // =======================================
 // CONFIG
@@ -77,7 +76,7 @@ for (const file of commandFiles) {
 }
 
 // =======================================
-// MESSAGE HANDLER (OPRAVENÝ – ŽÁDNÉ 2× ODPOVĚDI)
+// MESSAGE HANDLER – OPRAVENÝ
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
@@ -129,22 +128,19 @@ client.on("message", async (channel, user, message, self) => {
     return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
   }
 
-  // GAME REACTIONS
+  // GAME REACTIONS (JEN KDYŽ NIC JINÉHO NEODPOVĚDĚLO)
   const game = await getGameCached();
   if (game) {
     const g = game.toLowerCase();
 
     if (g.includes("tarkov")) {
-      client.say(channel, `🔫 Tarkov? Šance na přežití: 12 %, tilt: 98 %.`);
-    }
-    if (g.includes("cs2") || g.includes("counter-strike")) {
-      client.say(channel, `🎯 CS2? Aim dneska spí jak medvěd.`);
-    }
-    if (g.includes("fortnite")) {
-      client.say(channel, `🏗️ Fortnite? To je dětská verze Tarkova.`);
-    }
-    if (g.includes("outlast")) {
-      client.say(channel, `😱 Outlast? Doufám, že máš čistý trenky.`);
+      return client.say(channel, `🔫 Tarkov? Šance na přežití: 12 %, tilt: 98 %.`);
+    } else if (g.includes("cs2") || g.includes("counter-strike")) {
+      return client.say(channel, `🎯 CS2? Aim dneska spí jak medvěd.`);
+    } else if (g.includes("fortnite")) {
+      return client.say(channel, `🏗️ Fortnite? To je dětská verze Tarkova.`);
+    } else if (g.includes("outlast")) {
+      return client.say(channel, `😱 Outlast? Doufám, že máš čistý trenky.`);
     }
   }
 });
@@ -158,8 +154,3 @@ setInterval(() => {
 }, 20 * 60 * 1000);
 
 console.log("Vexru RPG 2.0 (Twitch API verze) běží...");
-const express = require("express");
-const app = express();
-
-app.get("/", (req, res) => res.send("Vexru běží."));
-app.listen(process.env.PORT || 3000);
