@@ -1,30 +1,39 @@
-// core/inventory.js
 const fs = require("fs");
 const path = require("path");
 
-const usersPath = path.join(__dirname, "..", "data", "users.json");
+const invPath = path.join(__dirname, "..", "data", "inventory.json");
 
-function loadDB() {
-    if (!fs.existsSync(usersPath)) return {};
-    const raw = fs.readFileSync(usersPath, "utf8").trim();
+// Načtení inventáře
+function loadInv() {
+    if (!fs.existsSync(invPath)) return {};
+    const raw = fs.readFileSync(invPath, "utf8").trim();
     if (!raw) return {};
     return JSON.parse(raw);
 }
 
-function saveDB(db) {
-    fs.writeFileSync(usersPath, JSON.stringify(db, null, 2));
+// Uložení inventáře
+function saveInv(db) {
+    fs.writeFileSync(invPath, JSON.stringify(db, null, 2));
 }
 
+// Přidání itemu hráči
 function addItem(username, item) {
-    const db = loadDB();
-    const key = username.toLowerCase();
+    const db = loadInv();
 
-    if (!db[key]) return;
+    if (!db[username]) db[username] = [];
 
-    db[key].inventory ??= [];
-    db[key].inventory.push(item);
+    db[username].push(item);
 
-    saveDB(db);
+    saveInv(db);
 }
 
-module.exports = { addItem };
+// Získání inventáře hráče
+function getInventory(username) {
+    const db = loadInv();
+    return db[username] || [];
+}
+
+module.exports = {
+    addItem,
+    getInventory
+};
