@@ -19,39 +19,52 @@ module.exports = {
     description: "Sundá item ze slotu a vrátí ho do inventáře",
 
     execute: async (client, channel, user, args) => {
-        const username = user.username.toLowerCase();
-        const slot = args[0]?.toLowerCase();
+        try {
+            const username = user.username.toLowerCase();
+            const slot = args[0]?.toLowerCase();
 
-        if (!["weapon", "armor", "trinket"].includes(slot)) {
-            return client.say(channel, `@${user.username} použití: !unequip <weapon|armor|trinket>`);
+            // Kontrola slotu
+            if (!["weapon", "armor", "trinket"].includes(slot)) {
+                return client.say(
+                    channel,
+                    `@${user.username} použití: !unequip <weapon|armor|trinket>`
+                );
+            }
+
+            const db = loadDB();
+
+            // Profil neexistuje
+            if (!db[username]) {
+                return client.say(channel, `@${user.username} nemáš profil.`);
+            }
+
+            db[username].inventory ??= [];
+            db[username].gear ??= { weapon: null, armor: null, trinket: null };
+
+            const item = db[username].gear[slot];
+
+            // Slot je prázdný
+            if (!item) {
+                return client.say(channel, `@${user.username} tento slot je prázdný.`);
+            }
+
+            // Vrátíme item do inventáře
+            db[username].inventory.push(item);
+
+            // Vyprázdníme slot
+            db[username].gear[slot] = null;
+
+            saveDB(db);
+
+            // Jediná odpověď
+            return client.say(
+                channel,
+                `🧰 @${user.username} sundal item **${item.name}** ze slotu ${slot}.`
+            );
+
+        } catch (err) {
+            console.error("Chyba v !unequip:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        const db = loadDB();
-
-        if (!db[username]) {
-            return client.say(channel, `@${user.username} nemáš profil.`);
-        }
-
-        db[username].inventory ??= [];
-        db[username].gear ??= { weapon: null, armor: null, trinket: null };
-
-        const item = db[username].gear[slot];
-
-        if (!item) {
-            return client.say(channel, `@${user.username} tento slot je prázdný.`);
-        }
-
-        // Vrátíme item do inventáře
-        db[username].inventory.push(item);
-
-        // Vyprázdníme slot
-        db[username].gear[slot] = null;
-
-        saveDB(db);
-
-        return client.say(
-            channel,
-            `🧰 @${user.username} sundal item **${item.name}** ze slotu ${slot}.`
-        );
     }
 };
