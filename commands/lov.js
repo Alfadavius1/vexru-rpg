@@ -13,8 +13,8 @@ module.exports = {
         try {
             const username = user.username.toLowerCase();
 
-            // Cooldown
-            const cd = checkCooldown(username, "lov", 30);
+            // ⭐ OPRAVA: Cooldown musí být AWAIT
+            const cd = await checkCooldown(username, "lov", 30);
             if (cd > 0) {
                 return client.say(channel, `@${user.username} počkej ještě ${cd}s.`);
             }
@@ -55,6 +55,7 @@ module.exports = {
                 return client.say(channel, `@${user.username} něco se pokazilo (žádné itemy v baseItems.json).`);
             }
 
+            // Náhodný item
             const baseItem = baseItems[Math.floor(Math.random() * baseItems.length)];
 
             // Rarity
@@ -83,7 +84,7 @@ module.exports = {
             // XP
             addXP(username, xpGain);
 
-            // Výstup do chatu — JEDINÁ odpověď
+            // ⭐ JEDINÁ odpověď
             return client.say(
                 channel,
                 `🦌 @${user.username} ulovil **${rarity}** item: ${baseItem.name} | XP +${xpGain}, Gold +${goldGain}`
