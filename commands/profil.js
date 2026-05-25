@@ -1,11 +1,10 @@
-// commands/profil.js
 const { getProfile } = require("../core/profile");
 
 module.exports = {
     name: "profil",
     description: "Zobrazí profil hráče",
-    execute: async (client, channel, user) => {
 
+    execute: async (client, channel, user) => {
         const profile = getProfile(user.username.toLowerCase());
 
         if (!profile) {
@@ -21,7 +20,7 @@ module.exports = {
         const armor = gear.armor ? gear.armor.name : "nic";
         const trinket = gear.trinket ? gear.trinket.name : "nic";
 
-        client.say(
+        return client.say(
             channel,
             `📜 Profil @${user.username} | Rank: ${rank} | Lvl: ${level}
 XP: ${xp} | Gold: ${gold}
