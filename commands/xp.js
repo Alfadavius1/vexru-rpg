@@ -2,25 +2,33 @@ const { getUser, getNeededXP } = require("../core/xp");
 
 module.exports = {
     name: "xp",
+    description: "Zobrazí XP a level hráče",
 
-    async execute(client, channel, user) {
-        const username = user.username.toLowerCase();
+    execute: async (client, channel, user) => {
+        try {
+            const username = user.username.toLowerCase();
 
-        // Získání dat uživatele
-        const data = await getUser(username);
+            // Načtení XP dat
+            const data = await getUser(username);
 
-        if (!data) {
+            if (!data) {
+                return client.say(
+                    channel,
+                    `@${username} zatím nemáš žádné XP. Napiš něco do chatu a začneš je získávat!`
+                );
+            }
+
+            const needed = getNeededXP(data.level);
+
+            // ⭐ Jediná odpověď
             return client.say(
                 channel,
-                `@${username} zatím nemáš žádné XP. Napiš něco do chatu a začneš je získávat!`
+                `@${username} • Level: ${data.level} • XP: ${data.xp}/${needed}`
             );
+
+        } catch (err) {
+            console.error("Chyba v !xp:", err);
+            return client.say(channel, `@${user.username} něco se pokazilo.`);
         }
-
-        const needed = getNeededXP(data.level);
-
-        return client.say(
-            channel,
-            `@${username} • Level: ${data.level} • XP: ${data.xp}/${needed}`
-        );
     }
 };
