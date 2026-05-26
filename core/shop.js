@@ -1,7 +1,9 @@
+// core/shop.js
+
 const fs = require("fs");
 const path = require("path");
-const { addItem, removeItem, getInventory } = require("./inventory");
 const { getGold, addGold, removeGold } = require("./gold");
+const { colorizeRarity } = require("./rarity");
 
 const shopPath = path.join(__dirname, "..", "data", "shop.json");
 
@@ -14,21 +16,21 @@ const shopPool = [
         rarity: "common",
         type: "weapon",
         value: 10,
-        stats: { attack: 2, defense: 0, hp: 0 }
+        stats: { dmg: 2, defense: 0, hp: 0 }
     },
     {
         name: "Kožená zbroj",
         rarity: "common",
         type: "armor",
         value: 12,
-        stats: { attack: 0, defense: 2, hp: 0 }
+        stats: { dmg: 0, defense: 2, hp: 0 }
     },
     {
         name: "Stříbrný prsten",
         rarity: "rare",
-        type: "ring",
+        type: "trinket",
         value: 25,
-        stats: { attack: 1, defense: 1, hp: 5 }
+        stats: { dmg: 1, defense: 1, hp: 5 }
     },
     {
         name: "Léčivá bylina",
@@ -49,14 +51,14 @@ const shopPool = [
         rarity: "rare",
         type: "weapon",
         value: 40,
-        stats: { attack: 5, defense: 0, hp: 0 }
+        stats: { dmg: 5, defense: 0, hp: 0 }
     },
     {
         name: "Ocelová zbroj",
         rarity: "epic",
         type: "armor",
         value: 80,
-        stats: { attack: 0, defense: 8, hp: 10 }
+        stats: { dmg: 0, defense: 8, hp: 10 }
     }
 ];
 
@@ -97,7 +99,6 @@ function loadShop() {
 
     const data = JSON.parse(raw);
 
-    // Pokud vypršela rotace → nová
     if (Date.now() > data.nextRotation) {
         return generateRotation();
     }
@@ -121,33 +122,42 @@ function buyItem(username, itemName) {
 
     removeGold(username, item.value);
 
-    addItem(username, {
+    // načíst users.json
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+
+    // přidat item do inventáře
+    users[username].inventory.push({
         name: item.name,
         rarity: item.rarity,
         type: item.type,
-        amount: 1,
-        value: item.value,
-        stats: item.stats
+        stats: item.stats,
+        value: item.value
     });
 
-    return { ok: true, msg: `Koupil jsi ${item.name} za ${item.value} goldů.` };
+    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+
+    return { ok: true, msg: `Koupil jsi ${item.name} (${colorizeRarity(item.rarity)}) za ${item.value} goldů.` };
 }
 
 // ===============================
 // 5) PRODEJ
 // ===============================
 function sellItem(username, itemName) {
-    const inv = getInventory(username);
-    const item = inv.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+    const inv = users[username].inventory;
 
-    if (!item) return { ok: false, msg: "Tento item nemáš." };
+    const index = inv.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
+    if (index === -1) return { ok: false, msg: "Tento item nemáš." };
 
+    const item = inv[index];
     const sellValue = Math.floor(item.value / 2) || 1;
 
-    removeItem(username, item.name, 1);
-    addGold(username, sellValue);
+    inv.splice(index, 1);
+    users[username].gold += sellValue;
 
-    return { ok: true, msg: `Prodáno: ${item.name} za ${sellValue} goldů.` };
+    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+
+    return { ok: true, msg: `Prodáno: ${item.name} (${colorizeRarity(item.rarity)}) za ${sellValue} goldů.` };
 }
 
 // ===============================
@@ -156,7 +166,7 @@ function sellItem(username, itemName) {
 setInterval(() => {
     generateRotation();
     console.log("SHOP: Nová rotace vygenerována.");
-}, 2 * 60 * 60 * 1000); // 2 hodiny
+}, 2 * 60 * 60 * 1000);
 
 module.exports = {
     loadShop,
