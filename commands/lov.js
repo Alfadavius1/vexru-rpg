@@ -1,100 +1,56 @@
-const bestiary = require("../core/bestiary");
-const { loadStats, saveStats } = require("../core/stats");
-const { addXP } = require("../core/xp");
-const { addGold } = require("../core/gold");
-const { addItem } = require("../core/inventory");
-const { playerDeath } = require("../core/death");
+// commands/lov.js
+const { getProfile } = require("../core/profile");
+const { getStats, changeHP, applyDeath } = require("../core/stats");
 
 module.exports = {
     name: "lov",
-    description: "Zaútočí na náhodného nepřítele a získá loot",
+    description: "Jednoduchý lov nepřátel",
 
-    execute: async (client, channel, user, args) => {
+    async execute(client, channel, user, args) {
         const username = user.username.toLowerCase();
+        const profile = getProfile(username);
+        let stats = getStats(username, profile.level);
 
-        const stats = loadStats();
-        const s = stats[username];
-
-        if (!s) {
-            return client.say(channel, `@${username} ještě nemáš statistiky. Napiš !stats.`);
+        if (stats.currentHP <= 0) {
+            applyDeath(username);
+            stats = getStats(username, profile.level);
+            return client.say(channel, `@${user.username} byl jsi na pokraji smrti, máš jen ${stats.currentHP}/${stats.hp} HP.`);
         }
 
-        // OBTÍŽNOST: easy / medium / hard
-        let difficulty = "medium";
+        const difficulty = (args[0] || "easy").toLowerCase();
+        let dmgTaken = 0;
+        let xpGain = 0;
+        let goldGain = 0;
 
-        if (args && args[0]) {
-            const d = args[0].toLowerCase();
-            if (["easy", "medium", "hard"].includes(d)) {
-                difficulty = d;
-            }
+        switch (difficulty) {
+            case "hard":
+                dmgTaken = 25;
+                xpGain = 10;
+                goldGain = 6;
+                break;
+            case "medium":
+                dmgTaken = 15;
+                xpGain = 5;
+                goldGain = 3;
+                break;
+            default:
+                dmgTaken = 8;
+                xpGain = 3;
+                goldGain = 2;
         }
 
-        // Vybereme náhodného moba
-        const baseMob = bestiary[Math.floor(Math.random() * bestiary.length)];
-        const mob = bestiary.scaleMobDifficulty(baseMob, s.level || 1, difficulty);
-
-        // PvE damage výpočet
-        const dmgPlayer = Math.max(1, s.strength - (mob.defense || 0));
-        const dmgMob = Math.max(1, (mob.damage || mob.level * 2) - s.defense);
-
-        let hpPlayer = s.currentHP;
-        let hpMob = mob.hp || mob.level * 10;
-
-        // Simulace boje
-        while (hpPlayer > 0 && hpMob > 0) {
-            hpMob -= dmgPlayer;
-            if (hpMob <= 0) break;
-
-            hpPlayer -= dmgMob;
+        // obratnost → šance snížit dmg
+        const dodgeChance = Math.min(50, stats.agility * 2); // max 50 %
+        const roll = Math.floor(Math.random() * 100) + 1;
+        if (roll <= dodgeChance) {
+            dmgTaken = Math.floor(dmgTaken / 2);
         }
 
-        // Hráč prohrál
-        if (hpPlayer <= 0) {
-            const msg = playerDeath(username);
-            return client.say(channel, `@${username} (${difficulty.toUpperCase()}) ${msg}`);
-        }
+        const after = changeHP(username, -dmgTaken);
 
-        // Hráč vyhrál
-        s.currentHP = hpPlayer;
-        saveStats(stats);
-
-        // XP + goldy základ
-        let xpGain = mob.level * 5;
-        let goldGain = mob.level * 3;
-
-        if (difficulty === "easy") {
-            xpGain = Math.floor(xpGain * 0.7);
-            goldGain = Math.floor(goldGain * 0.7);
-        }
-
-        if (difficulty === "hard") {
-            xpGain = Math.floor(xpGain * 2.0);
-            goldGain = Math.floor(goldGain * 2.0);
-        }
-
-        addXP(username, xpGain);
-        addGold(username, goldGain);
-
-        // DROP S CHANCÍ
-        let dropItem = null;
-
-        if (mob.drops && mob.drops.length > 0) {
-            for (const drop of mob.drops) {
-                if (Math.random() < drop.chance) {
-                    dropItem = drop.name;
-                    break;
-                }
-            }
-        }
-
-        if (dropItem) {
-            addItem(username, dropItem);
-        }
-
-        return client.say(
+        client.say(
             channel,
-            `@${username} porazil jsi **${mob.name}** (${difficulty.toUpperCase()})! Získáváš +${xpGain} XP, +${goldGain} goldů` +
-            (dropItem ? ` a item **${dropItem}**.` : `, ale tentokrát nic nepadlo.`)
+            `@${user.username} lovíš (${difficulty.toUpperCase()}) – dostal jsi ${dmgTaken} dmg, máš ${after.currentHP}/${after.hp} HP.`
         );
     }
 };
