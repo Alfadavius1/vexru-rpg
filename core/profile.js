@@ -12,15 +12,31 @@ function saveDB(db) {
     fs.writeFileSync(path, JSON.stringify(db, null, 2));
 }
 
+function createProfile(username) {
+    return {
+        level: 1,
+        xp: 0,
+        gold: 0,
+        rank: "Bronze",
+        stats: { dmg: 5, luck: 1, hp: 100 },
+        gear: { weapon: null, armor: null, trinket: null },
+        inventory: []
+    };
+}
+
 function getProfile(username) {
     const db = loadDB();
     const key = username.toLowerCase();
 
-    if (!db[key]) return null;
+    // 🔥 Pokud profil neexistuje → vytvoříme ho
+    if (!db[key]) {
+        db[key] = createProfile(username);
+        saveDB(db);
+    }
 
     const user = db[key];
 
-    // Default hodnoty
+    // Default hodnoty (pro staré profily)
     user.level ??= 1;
     user.xp ??= 0;
     user.gold ??= 0;
@@ -45,7 +61,7 @@ function getProfile(username) {
         totalBuffs.gold += info.buffs.gold;
     }
 
-    // Uložíme default hodnoty zpět (bezpečné)
+    // Uložíme zpět
     db[key] = user;
     saveDB(db);
 
@@ -62,4 +78,3 @@ function getProfile(username) {
 }
 
 module.exports = { getProfile };
-
