@@ -1,4 +1,7 @@
+// commands/sell.js
+
 const fs = require("fs");
+const { colorizeRarity } = require("../core/bestiary");
 
 module.exports = {
     name: "sell",
@@ -20,20 +23,24 @@ module.exports = {
         }
 
         const inv = userData.inventory;
-        const index = inv.indexOf(itemName);
+        const index = inv.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
 
         if (index === -1) {
             return client.say(channel, `@${user.username} tento item nemáš.`);
         }
 
-        // cena = délka názvu * 2
-        const price = itemName.length * 2;
+        const item = inv[index];
+
+        const price = item.name.length * 2;
 
         inv.splice(index, 1);
         userData.gold += price;
 
         fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
 
-        return client.say(channel, `@${user.username} prodal jsi **${itemName}** za ${price} gold.`);
+        return client.say(
+            channel,
+            `@${user.username} prodal jsi **${item.name}** (${colorizeRarity(item.rarity)}) za ${price} gold.`
+        );
     }
 };
