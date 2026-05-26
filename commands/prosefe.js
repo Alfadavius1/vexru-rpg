@@ -1,51 +1,35 @@
+// commands/profese.js
 const fs = require("fs");
-const path = require("path");
-const { getUser, getNeededXP } = require("../core/xp.js");
-
-const usersPath = path.join(__dirname, "..", "data", "users.json");
-
-function loadDB() {
-    if (!fs.existsSync(usersPath)) return {};
-    const raw = fs.readFileSync(usersPath, "utf8").trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
-}
+const { getProfile } = require("../core/profile");
+const { updateStats } = require("../core/stats");
+const { PROFESSIONS, getProfession } = require("../core/profese");
 
 module.exports = {
     name: "profese",
-    description: "Zobrazí informace o tvé profesi",
+    description: "Nastaví profesi hráče",
 
-    execute: async (client, channel, user) => {
-        try {
-            const username = user.username.toLowerCase();
+    async execute(client, channel, user, args) {
+        const username = user.username.toLowerCase();
+        const profile = getProfile(username);
 
-            // Načtení databáze
-            const db = loadDB();
+        const choice = (args[0] || "").toLowerCase();
 
-            if (!db[username]) {
-                return client.say(channel, `@${username} ještě nemáš profil.`);
-            }
-
-            const gold = db[username].gold || 0;
-            const profese = db[username].profese || "Žádná";
-
-            // XP systém
-            const xpData = getUser(username);
-            if (!xpData) {
-                return client.say(channel, `@${username} ještě nemáš žádnou profesi ani XP.`);
-            }
-
-            const needed = getNeededXP(xpData.level);
-
-            // ⭐ Jediná odpověď
-            return client.say(
-                channel,
-                `🧰 @${username} | Profese: ${profese} | Level: ${xpData.level} | XP: ${xpData.xp}/${needed} | Gold: ${gold}`
-            );
-
-        } catch (err) {
-            console.error("Chyba v !profese:", err);
-            return client.say(channel, `@${user.username} něco se pokazilo.`);
+        if (!PROFESSIONS[choice]) {
+            const list = Object.keys(PROFESSIONS).join(", ");
+            return client.say(channel, `@${user.username} dostupné profese: ${list}`);
         }
+
+        // uložíme profesi
+        const db = JSON.parse(fs.readFileSync("./data/users.json"));
+        db[username].profession = choice;
+        fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
+
+        // přepočítáme staty
+        updateStats(username, profile.level);
+
+        return client.say(
+            channel,
+            `@${user.username} tvoje profese je nyní **${PROFESSIONS[choice].name}**!`
+        );
     }
 };
