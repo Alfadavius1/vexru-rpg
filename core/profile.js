@@ -18,7 +18,6 @@ function createProfile(username) {
         xp: 0,
         gold: 0,
         rank: "Bronze",
-        stats: { dmg: 5, luck: 1, hp: 100 },
         gear: { weapon: null, armor: null, trinket: null },
         inventory: []
     };
@@ -28,7 +27,6 @@ function getProfile(username) {
     const db = loadDB();
     const key = username.toLowerCase();
 
-    // 🔥 Pokud profil neexistuje → vytvoříme ho
     if (!db[key]) {
         db[key] = createProfile(username);
         saveDB(db);
@@ -36,16 +34,13 @@ function getProfile(username) {
 
     const user = db[key];
 
-    // Default hodnoty (pro staré profily)
     user.level ??= 1;
     user.xp ??= 0;
     user.gold ??= 0;
     user.rank ??= "Bronze";
-    user.stats ??= { dmg: 5, luck: 1, hp: 100 };
     user.gear ??= { weapon: null, armor: null, trinket: null };
     user.inventory ??= [];
 
-    // Výpočet buffů
     let totalBuffs = { xp: 0, dmg: 0, luck: 0, gold: 0 };
 
     for (const slot of ["weapon", "armor", "trinket"]) {
@@ -61,7 +56,6 @@ function getProfile(username) {
         totalBuffs.gold += info.buffs.gold;
     }
 
-    // Uložíme zpět
     db[key] = user;
     saveDB(db);
 
@@ -70,7 +64,6 @@ function getProfile(username) {
         xp: user.xp,
         gold: user.gold,
         rank: user.rank,
-        stats: user.stats,
         gear: user.gear,
         buffs: totalBuffs,
         inventoryCount: user.inventory.length
