@@ -1,13 +1,13 @@
 // commands/equip.js
 
 const fs = require("fs");
-const { getGearByName, colorizeRarity } = require("../core/gear");
+const { getGearByRarity, colorizeRarity } = require("../core/gear");
 
 module.exports = {
     name: "equip",
     description: "Nasadí gear",
 
-    async execute(client, channel, user, args) {
+    execute: async (client, channel, user, args) => {
         const username = user.username.toLowerCase();
         const itemName = args.join(" ");
 
@@ -30,17 +30,17 @@ module.exports = {
         }
 
         const item = inv[index];
-        const gear = getGearByName(item.name);
 
-        if (!gear) {
+        // není gear → nejde equipnout
+        if (item.type !== "gear") {
             return client.say(channel, `@${user.username} tento item není gear.`);
         }
 
         // nasadit gear
-        userData.gear[gear.slot] = {
-            name: gear.name,
-            rarity: gear.rarity,
-            stats: gear.stats
+        userData.gear[item.slot] = {
+            name: item.name,
+            rarity: item.rarity,
+            stats: item.stats
         };
 
         // odstranit z inventáře
@@ -50,7 +50,7 @@ module.exports = {
 
         return client.say(
             channel,
-            `@${user.username} nasadil jsi **${gear.name}** (${colorizeRarity(gear.rarity)}) do slotu **${gear.slot}**.`
+            `@${user.username} nasadil jsi **${item.name}** (${colorizeRarity(item.rarity)}) do slotu **${item.slot}**.`
         );
     }
 };
