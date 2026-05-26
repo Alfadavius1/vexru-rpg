@@ -1,13 +1,6 @@
 // core/bestiary.js
 
-function colorizeRarity(rarity) {
-    switch (rarity) {
-        case "rare": return "🔵 rare";
-        case "epic": return "🟣 epic";
-        case "legendary": return "🟠 legendary";
-        default: return "common";
-    }
-}
+const { colorizeRarity } = require("./rarity");
 
 function scaleMobDifficulty(mob, playerLevel, difficulty) {
     let multiplier = 1;
@@ -41,45 +34,7 @@ const bestiary = [
             { name: "Vlčí dráp", chance: 0.1, rarity: "rare" }
         ]
     },
-    {
-        name: "Divoký zajíc",
-        level: 1,
-        hp: 10,
-        damage: 2,
-        defense: 0,
-        rarity: "common",
-        drops: [
-            { name: "Zaječí maso", chance: 0.7, rarity: "common" },
-            { name: "Zaječí ucho", chance: 0.3, rarity: "common" }
-        ]
-    },
-    {
-        name: "Lesní goblin",
-        level: 2,
-        hp: 25,
-        damage: 5,
-        defense: 1,
-        rarity: "common",
-        drops: [
-            { name: "Gobliní ucho", chance: 0.5, rarity: "common" },
-            { name: "Malý měšec", chance: 0.3, rarity: "common" },
-            { name: "Zrezlá kudla", chance: 0.2, rarity: "rare" }
-        ]
-    },
-    {
-        name: "Hladový pavouk",
-        level: 2,
-        hp: 22,
-        damage: 6,
-        defense: 0,
-        rarity: "common",
-        drops: [
-            { name: "Pavoučí žláza", chance: 0.4, rarity: "common" },
-            { name: "Pavoučí vlákno", chance: 0.6, rarity: "common" }
-        ]
-    },
 
-    // RARE
     {
         name: "Temný lovec",
         level: 4,
@@ -94,7 +49,6 @@ const bestiary = [
         ]
     },
 
-    // EPIC
     {
         name: "Ohnivý elementál",
         level: 6,
@@ -109,7 +63,6 @@ const bestiary = [
         ]
     },
 
-    // LEGENDARY
     {
         name: "Král lesa — Gromar",
         level: 10,
