@@ -2,7 +2,7 @@
 
 console.log("LOV COMMAND LOADED");
 
-const { getProfile, setLevelAndXP } = require("../core/profile");
+const { getProfile } = require("../core/profile");
 const { getStats, changeHP, applyDeath } = require("../core/stats");
 const { getAllEffects, roll } = require("../utils/_utilProfese");
 const bestiary = require("../core/bestiary");
