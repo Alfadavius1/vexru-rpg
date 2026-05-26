@@ -7,6 +7,7 @@ const { getStats, changeHP, applyDeath } = require("../core/stats");
 const { getAllEffects, roll } = require("../utils/_utilProfese");
 const bestiary = require("../core/bestiary");
 const { scaleMobDifficulty, colorizeRarity } = require("../core/bestiary");
+const { getGearByRarity } = require("../core/gear");
 const fs = require("fs");
 
 module.exports = {
@@ -65,13 +66,39 @@ module.exports = {
 
         const drops = [];
 
+        // běžné dropy
         for (const item of mob.drops) {
             if (Math.random() < item.chance) {
                 drops.push(`${item.name} (${colorizeRarity(item.rarity)})`);
 
                 users[username].inventory.push({
                     name: item.name,
-                    rarity: item.rarity
+                    rarity: item.rarity,
+                    type: "material"
+                });
+            }
+        }
+
+        // GEAR DROP
+        const gearChance = {
+            common: 0.03,
+            rare: 0.06,
+            epic: 0.10,
+            legendary: 0.20
+        };
+
+        if (Math.random() < (gearChance[mob.rarity] || 0)) {
+            const gear = getGearByRarity(mob.rarity);
+
+            if (gear) {
+                drops.push(`GEAR: ${gear.name} (${colorizeRarity(gear.rarity)})`);
+
+                users[username].inventory.push({
+                    name: gear.name,
+                    rarity: gear.rarity,
+                    slot: gear.slot,
+                    stats: gear.stats,
+                    type: "gear"
                 });
             }
         }
