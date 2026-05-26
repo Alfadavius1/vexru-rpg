@@ -1,3 +1,5 @@
+// core/bestiary.js
+
 function scaleMobDifficulty(mob, playerLevel, difficulty) {
     let multiplier = 1;
 
