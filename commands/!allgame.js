@@ -1,5 +1,5 @@
 module.exports = {
-    name: "allgame",
+    name: "allgame.js",
     description: "Zobrazí všechny RPG příkazy",
 
     execute: async (client, channel, user) => {
