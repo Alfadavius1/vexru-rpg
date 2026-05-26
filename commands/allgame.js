@@ -1,8 +1,8 @@
 module.exports = {
-    name: "allgame.js",
+    name: "allgame",
     description: "Zobrazí všechny RPG příkazy",
 
-    execute: async (client, channel, user) => {
+    async execute(client, channel, user) {
         const username = user.username.toLowerCase();
 
         const msg = `
