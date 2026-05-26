@@ -1,7 +1,7 @@
 // commands/inv.js
 
 const fs = require("fs");
-const { colorizeRarity } = require("../core/bestiary");
+const { colorizeRarity } = require("../core/rarity");
 
 module.exports = {
     name: "inv",
