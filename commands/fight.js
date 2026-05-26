@@ -1,79 +1,67 @@
-const { loadStats, saveStats } = require("../core/stats");
-const { getUser, addXP } = require("../core/xp");
-const { addGold } = require("../core/gold");
-const { applyDeath } = require("../core/stats");
+// commands/fight.js
+const { getProfile } = require("../core/profile");
+const { getStats, changeHP, applyDeath } = require("../core/stats");
 
 module.exports = {
     name: "fight",
-    description: "PvP souboj mezi dvěma hráči",
+    description: "Souboj 1v1 proti mobovi",
 
-    execute: async (client, channel, user, args) => {
-        const attacker = user.username.toLowerCase();
+    async execute(client, channel, user) {
+        const username = user.username.toLowerCase();
+        const profile = getProfile(username);
+        let stats = getStats(username, profile.level);
 
-        if (!args[0]) {
-            return client.say(channel, `@${attacker} napiš hráče, kterého chceš vyzvat. Např.: !fight jmeno`);
+        if (stats.currentHP <= 0) {
+            applyDeath(username);
+            stats = getStats(username, profile.level);
+            return client.say(channel, `@${user.username} jsi byl mrtvý, máš jen ${stats.currentHP}/${stats.hp} HP.`);
         }
 
-        const defender = args[0].replace("@", "").toLowerCase();
+        const mob = {
+            name: "Temný válečník",
+            hp: 80,
+            dmg: 12,
+            agility: 5
+        };
 
-        if (attacker === defender) {
-            return client.say(channel, `@${attacker} nemůžeš bojovat sám se sebou.`);
+        let playerHP = stats.currentHP;
+        let mobHP = mob.hp;
+
+        while (playerHP > 0 && mobHP > 0) {
+            // hráč útočí
+            let playerDmg = stats.strength;
+            const critRoll = Math.floor(Math.random() * 100) + 1;
+            if (critRoll <= stats.agility * 2) {
+                playerDmg = Math.floor(playerDmg * 1.5);
+            }
+            mobHP -= playerDmg;
+
+            if (mobHP <= 0) break;
+
+            // mob útočí
+            let mobDmg = mob.dmg;
+            const dodgeRoll = Math.floor(Math.random() * 100) + 1;
+            if (dodgeRoll <= stats.agility * 2) {
+                mobDmg = Math.floor(mobDmg / 2);
+            }
+            playerHP -= mobDmg;
         }
 
-        const stats = loadStats();
+        const delta = playerHP - stats.currentHP;
+        const after = changeHP(username, delta);
 
-        if (!stats[attacker] || !stats[defender]) {
-            return client.say(channel, `@${attacker} oba hráči musí mít statistiky.`);
+        if (after.currentHP <= 0) {
+            applyDeath(username);
+            const dead = getStats(username, profile.level);
+            return client.say(
+                channel,
+                `@${user.username} prohrál jsi s ${mob.name} a padl v boji. Máš nyní ${dead.currentHP}/${dead.hp} HP.`
+            );
         }
 
-        const A = stats[attacker];
-        const D = stats[defender];
-
-        // PvP povoleno jen při plných HP
-        if (A.currentHP < A.hp) {
-            return client.say(channel, `@${attacker} nemáš plné HP. PvP je možné jen s plnými HP.`);
-        }
-
-        if (D.currentHP < D.hp) {
-            return client.say(channel, `@${attacker} hráč @${defender} nemá plné HP. PvP nelze zahájit.`);
-        }
-
-        // Výpočet damage
-        const dmgA = Math.max(1, A.strength - D.defense);
-        const dmgD = Math.max(1, D.strength - A.defense);
-
-        // Simulace boje
-        let hpA = A.hp;
-        let hpD = D.hp;
-
-        while (hpA > 0 && hpD > 0) {
-            hpD -= dmgA;
-            if (hpD <= 0) break;
-
-            hpA -= dmgD;
-        }
-
-        let winner, loser;
-
-        if (hpA > 0) {
-            winner = attacker;
-            loser = defender;
-        } else {
-            winner = defender;
-            loser = attacker;
-        }
-
-        // Odměny vítězi
-        addXP(winner, 20);
-        addGold(winner, 15);
-
-        // Poražený → HP na 25 %
-        stats[loser].currentHP = Math.floor(stats[loser].hp * 0.25);
-        saveStats(stats);
-
-        return client.say(
+        client.say(
             channel,
-            `🥊 PvP souboj: @${attacker} vs @${defender} → vítěz je **@${winner}**! (+20 XP, +15 goldů) | @${loser} padl a má nyní 25 % HP.`
+            `@${user.username} porazil jsi ${mob.name}! Zbývá ti ${after.currentHP}/${after.hp} HP.`
         );
     }
 };
