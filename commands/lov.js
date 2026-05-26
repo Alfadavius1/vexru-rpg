@@ -65,8 +65,10 @@ module.exports = {
             newLevel += 1;
         }
 
-        // ULOŽENÍ XP + LEVEL
+        // načíst users.json
         const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+
+        // uložit XP + GOLD + LEVEL
         users[username].xp = newXP;
         users[username].gold = newGold;
         users[username].level = newLevel;
@@ -82,6 +84,7 @@ module.exports = {
             }
         }
 
+        // uložit users.json
         fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
 
         // zpráva o dropu
