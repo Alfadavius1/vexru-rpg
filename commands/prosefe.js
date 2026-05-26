@@ -1,35 +1,52 @@
 // commands/profese.js
-const fs = require("fs");
-const { getProfile } = require("../core/profile");
+const { getProfile, setProfession } = require("../core/profile");
 const { updateStats } = require("../core/stats");
-const { PROFESSIONS, getProfession } = require("../core/profese");
+const { getAllProfessions, getProfession } = require("../core/profese");
 
 module.exports = {
     name: "profese",
-    description: "Nastaví profesi hráče",
+    description: "Výběr profese podle tieru",
 
     async execute(client, channel, user, args) {
         const username = user.username.toLowerCase();
         const profile = getProfile(username);
+        const all = getAllProfessions();
 
         const choice = (args[0] || "").toLowerCase();
-
-        if (!PROFESSIONS[choice]) {
-            const list = Object.keys(PROFESSIONS).join(", ");
-            return client.say(channel, `@${user.username} dostupné profese: ${list}`);
+        if (!choice) {
+            return client.say(channel, `@${user.username} napiš: !profese <nazev>.`);
         }
 
-        // uložíme profesi
-        const db = JSON.parse(fs.readFileSync("./data/users.json"));
-        db[username].profession = choice;
-        fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
+        const prof = getProfession(choice);
+        if (!prof) {
+            const list = Object.values(all)
+                .map(p => `${p.key} (T${p.tier})`)
+                .join(", ");
+            return client.say(channel, `@${user.username} neznám tuhle profesi. Dostupné: ${list}`);
+        }
 
-        // přepočítáme staty
+        // kontrola levelu podle tieru
+        if (prof.tier === 1 && profile.level < 10) {
+            return client.say(channel, `@${user.username} Tier 1 profese jsou od levelu 10.`);
+        }
+        if (prof.tier === 2 && profile.level < 25) {
+            return client.say(channel, `@${user.username} Tier 2 profese jsou od levelu 25.`);
+        }
+        if (prof.tier === 3 && profile.level < 50) {
+            return client.say(channel, `@${user.username} Tier 3 profese jsou od levelu 50.`);
+        }
+
+        // kontrola stromu
+        if (prof.tier === 2 && profile.profession1 !== prof.parent) {
+            return client.say(channel, `@${user.username} pro ${prof.key} musíš mít nejdřív Tier 1: ${prof.parent}.`);
+        }
+        if (prof.tier === 3 && profile.profession2 !== prof.parent) {
+            return client.say(channel, `@${user.username} pro ${prof.key} musíš mít nejdřív Tier 2: ${prof.parent}.`);
+        }
+
+        setProfession(username, prof.tier, prof.key);
         updateStats(username, profile.level);
 
-        return client.say(
-            channel,
-            `@${user.username} tvoje profese je nyní **${PROFESSIONS[choice].name}**!`
-        );
+        client.say(channel, `@${user.username} tvoje profese T${prof.tier} je nyní **${prof.name}**.`);
     }
 };
