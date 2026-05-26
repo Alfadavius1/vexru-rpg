@@ -1,106 +1,89 @@
 const fs = require("fs");
-const path = require("path");
+const path = "./data/stats.json";
 
-const statsFile = path.join(__dirname, "../data/stats.json");
-
-// Pokud soubor neexistuje → vytvoříme prázdný
-if (!fs.existsSync(statsFile)) {
-    fs.writeFileSync(statsFile, JSON.stringify({}, null, 4));
-}
-
-// Načtení statů
+// Bezpečné načtení databáze
 function loadStats() {
+    if (!fs.existsSync(path)) return {};
+
     try {
-        const data = fs.readFileSync(statsFile, "utf8");
-        return JSON.parse(data);
+        const raw = fs.readFileSync(path, "utf8").trim();
+        if (!raw) return {};
+        return JSON.parse(raw);
     } catch (err) {
         console.error("Chyba při načítání stats.json:", err);
         return {};
     }
 }
 
-// Uložení statů
-function saveStats(stats) {
-    try {
-        fs.writeFileSync(statsFile, JSON.stringify(stats, null, 4));
-    } catch (err) {
-        console.error("Chyba při ukládání stats.json:", err);
-    }
+// Bezpečné uložení
+function saveStats(db) {
+    fs.writeFileSync(path, JSON.stringify(db, null, 2));
 }
 
-// Vytvoření nové postavy
-function createPlayer(username) {
-    const stats = loadStats();
+// Vytvoření statistik podle levelu
+function generateStats(level) {
+    const maxHP = 100 + level * 5;
 
-    stats[username] = {
-        level: 1,
-        xp: 0,
-        xpNeeded: 100,
-
-        // základní staty
-        strength: 5,
-        defense: 5,
-        vitality: 10,
-
-        // celkové staty (gear + base)
-        strengthTotal: 5,
-        defenseTotal: 5,
-        vitalityTotal: 10,
-
-        // HP
-        maxHP: 50,
-        currentHP: 50,
-
-        // goldy
-        gold: 0,
-
-        // inventář + gear
-        inventory: [],
-        gear: {
-            weapon: null,
-            helmet: null,
-            chest: null,
-            boots: null,
-            ring: null
-        }
+    return {
+        hp: maxHP,
+        currentHP: maxHP,
+        strength: 10 + level * 2,
+        defense: 5 + level * 1,
+        luck: Math.floor(level / 3)
     };
-
-    saveStats(stats);
-    return stats[username];
 }
 
-// Aktualizace celkových statů podle gearu
-function recalcStats(username) {
-    const stats = loadStats();
-    const p = stats[username];
-    if (!p) return;
+// Získání statistik hráče
+function getStats(username, level = 1) {
+    const db = loadStats();
+    const key = username.toLowerCase();
 
-    let str = p.strength;
-    let def = p.defense;
-    let vit = p.vitality;
-
-    for (const slot in p.gear) {
-        const item = p.gear[slot];
-        if (item && item.stats) {
-            str += item.stats.str || 0;
-            def += item.stats.def || 0;
-            vit += item.stats.vit || 0;
-        }
+    // Pokud hráč nemá statistiky → vytvoříme
+    if (!db[key]) {
+        db[key] = generateStats(level);
+        saveStats(db);
     }
 
-    p.strengthTotal = str;
-    p.defenseTotal = def;
-    p.vitalityTotal = vit;
+    return db[key];
+}
 
-    p.maxHP = 40 + vit * 5;
-    if (p.currentHP > p.maxHP) p.currentHP = p.maxHP;
+// Aktualizace statistik při level-upu
+function updateStats(username, level) {
+    const db = loadStats();
+    const key = username.toLowerCase();
 
-    saveStats(stats);
+    if (!db[key]) {
+        db[key] = generateStats(level);
+        saveStats(db);
+        return;
+    }
+
+    const old = db[key];
+    const newStats = generateStats(level);
+
+    // zachováme poměr HP
+    const ratio = old.currentHP / old.hp;
+    newStats.currentHP = Math.floor(newStats.hp * ratio);
+
+    db[key] = newStats;
+    saveStats(db);
+}
+
+// Nastavení HP na 25 % po smrti
+function applyDeath(username) {
+    const db = loadStats();
+    const key = username.toLowerCase();
+
+    if (!db[key]) return;
+
+    db[key].currentHP = Math.floor(db[key].hp * 0.25);
+    saveStats(db);
 }
 
 module.exports = {
     loadStats,
     saveStats,
-    createPlayer,
-    recalcStats
+    getStats,
+    updateStats,
+    applyDeath
 };
