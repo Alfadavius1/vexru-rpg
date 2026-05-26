@@ -1,4 +1,7 @@
+// commands/inv.js
+
 const fs = require("fs");
+const { colorizeRarity } = require("../core/bestiary");
 
 module.exports = {
     name: "inv",
@@ -18,6 +21,10 @@ module.exports = {
             return client.say(channel, `@${user.username} inventář je prázdný.`);
         }
 
-        return client.say(channel, `@${user.username} inventář: ${inv.join(", ")}`);
+        const items = inv
+            .map(i => `${i.name} (${colorizeRarity(i.rarity)})`)
+            .join(", ");
+
+        return client.say(channel, `@${user.username} inventář: ${items}`);
     }
 };
