@@ -1,7 +1,7 @@
 // commands/fight.js
 const { getProfile } = require("../core/profile");
 const { getStats, changeHP, applyDeath } = require("../core/stats");
-const { getAllEffects, roll, randInt } = require("./_utilProfese");
+const { getAllEffects, roll, randInt } = require("../utils/_utilProfese");
 
 module.exports = {
     name: "fight",
