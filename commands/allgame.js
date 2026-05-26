@@ -20,7 +20,7 @@ module.exports = {
 
 📦 INVENTÁŘ & STATY
 • !inventory — inventář
-• !stats — statistiky
+• !profil — Profil
 • !gold — goldy
 
 🛒 SHOP
