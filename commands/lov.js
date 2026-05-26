@@ -1,69 +1,53 @@
-// commands/_utilProfese.js
+// commands/lov.js
 
-const { getProfession } = require("../core/profese");
+console.log("LOV COMMAND LOADED"); // kontrola načtení
+
 const { getProfile } = require("../core/profile");
-
-function getAllEffects(username) {
-    const profile = getProfile(username);
-    const keys = [
-        profile.profession1,
-        profile.profession2,
-        profile.profession3
-    ].filter(Boolean);
-
-    const effects = {
-        critChance: 0,
-        critMult: 2.0,
-        dodgeChance: 0,
-        blockChance: 0,
-        dmgReduceChance: 0,
-        dmgReducePercent: 0,
-        reflectChance: 0,
-        reflectPercent: 0,
-        lifestealPercent: 0,
-        extraAttackChance: 0,
-        extraAttackCount: 1,
-        ignoreDefenseChance: 0,
-        bonusMagicChance: 0,
-        bonusMagicMin: 0,
-        bonusMagicMax: 0,
-        petChance: 0,
-        petMin: 0,
-        petMax: 0,
-        healChance: 0,
-        healMin: 0,
-        healMax: 0,
-        freezeChance: 0
-    };
-
-    for (const key of keys) {
-        const p = getProfession(key);
-        if (!p) continue;
-
-        const e = p.effects || {};
-        for (const k of Object.keys(e)) {
-            if (k === "critMult" || k === "extraAttackCount") {
-                effects[k] = Math.max(effects[k], e[k]);
-            } else {
-                effects[k] += e[k];
-            }
-        }
-    }
-
-    return effects;
-}
-
-function roll(chance) {
-    if (!chance || chance <= 0) return false;
-    return Math.random() * 100 < chance;
-}
-
-function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+const { getStats, changeHP, applyDeath } = require("../core/stats");
+const { getAllEffects, roll, randInt } = require("../utils/_utilProfese");
 
 module.exports = {
-    getAllEffects,
-    roll,
-    randInt
+    name: "lov",
+    description: "Lov nepřátel",
+
+    async execute(client, channel, user, args) {
+        const username = user.username.toLowerCase();
+
+        // načtení profilu a statů
+        const profile = getProfile(username);
+        let stats = getStats(username, profile.level);
+        const eff = getAllEffects(username);
+
+        // hráč mrtvý → oživit
+        if (stats.currentHP <= 0) {
+            applyDeath(username);
+            stats = getStats(username, profile.level);
+            return client.say(channel, `@${user.username} byl jsi KO, dávám ti 25 % HP → ${stats.currentHP}/${stats.hp}.`);
+        }
+
+        // obtížnost
+        const diff = (args[0] || "easy").toLowerCase();
+        let dmgTaken = 0;
+
+        if (diff === "hard") dmgTaken = 25;
+        else if (diff === "medium") dmgTaken = 15;
+        else dmgTaken = 8;
+
+        // efekty profesí
+        if (roll(eff.dodgeChance)) {
+            dmgTaken = 0;
+        } else if (roll(eff.blockChance)) {
+            dmgTaken = 0;
+        } else if (roll(eff.dmgReduceChance)) {
+            dmgTaken = Math.floor(dmgTaken * (1 - eff.dmgReducePercent / 100));
+        }
+
+        // aplikace dmg
+        const after = changeHP(username, -dmgTaken);
+
+        return client.say(
+            channel,
+            `@${user.username} lovíš (${diff.toUpperCase()}) → dostal jsi ${dmgTaken} dmg. HP: ${after.currentHP}/${after.hp}.`
+        );
+    }
 };
