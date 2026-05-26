@@ -1,134 +1,160 @@
-const bestiary = require("./bestiary");
-const { loadStats, saveStats } = require("./stats");
-const { addXP } = require("./xp");
-const { addGold } = require("./gold");
-const { addItem } = require("./inventory");
-const { playerDeath } = require("./death");
+// core/dungeon.js
 
-// Vybere náhodného bosse (legendary)
+const fs = require("fs");
+const bestiary = require("./bestiary");
+const { scaleMobDifficulty, colorizeRarity } = require("./bestiary");
+const { getProfile } = require("./profile");
+const { getStats, changeHP, applyDeath } = require("./stats");
+const { getAllEffects, roll } = require("../utils/_utilProfese");
+const { getGearByRarity } = require("./gear");
+
+// ===============================
+// GENERACE MOBŮ PRO DUNGEON
+// ===============================
+function getRandomMob() {
+    return bestiary[Math.floor(Math.random() * bestiary.length)];
+}
+
 function getRandomBoss() {
-    const bosses = bestiary.filter(m => m.rarity === "legendary");
+    const bosses = bestiary.filter(m => ["rare", "epic", "legendary"].includes(m.rarity));
     return bosses[Math.floor(Math.random() * bosses.length)];
 }
 
-// Vybere náhodného normálního moba
-function getRandomMob() {
-    const mobs = bestiary.filter(m => m.rarity !== "legendary");
-    return mobs[Math.floor(Math.random() * mobs.length)];
-}
+// ===============================
+// BOJ HRÁČE S MOMEM
+// ===============================
+function fightMob(username, mob, difficulty) {
+    const profile = getProfile(username);
+    let stats = getStats(username, profile.level);
+    const eff = getAllEffects(username);
 
-// Boj hráče s jedním mobem
-function fightMob(player, mob) {
-    const dmgPlayer = Math.max(1, player.strengthTotal - mob.defense);
-    const dmgMob = Math.max(1, mob.damage - player.defenseTotal);
+    const scaled = scaleMobDifficulty(mob, profile.level, difficulty);
 
-    let hpPlayer = player.currentHP;
-    let hpMob = mob.hp;
+    let dmgTaken = scaled.damage - stats.defense;
+    if (dmgTaken < 1) dmgTaken = 1;
 
-    while (hpPlayer > 0 && hpMob > 0) {
-        hpMob -= dmgPlayer;
-        if (hpMob <= 0) break;
-
-        hpPlayer -= dmgMob;
+    if (roll(eff.dodgeChance)) dmgTaken = 0;
+    else if (roll(eff.blockChance)) dmgTaken = 0;
+    else if (roll(eff.dmgReduceChance)) {
+        dmgTaken = Math.floor(dmgTaken * (1 - eff.dmgReducePercent / 100));
     }
 
+    const after = changeHP(username, -dmgTaken);
+
     return {
-        playerHP: hpPlayer,
-        mobHP: hpMob,
-        win: hpPlayer > 0
+        dmgTaken,
+        mobName: scaled.name,
+        mobRarity: scaled.rarity,
+        hpLeft: after.currentHP,
+        isDead: after.currentHP <= 0
     };
 }
 
+// ===============================
+// DUNGEON LOGIKA
+// ===============================
 function runDungeon(username, difficulty) {
-    const stats = loadStats();
-    const s = stats[username];
+    const profile = getProfile(username);
+    let stats = getStats(username, profile.level);
 
-    if (!s) return { ok: false, msg: "Nemáš statistiky." };
+    if (stats.currentHP <= 0) {
+        applyDeath(username);
+        return { ok: false, msg: "Byl jsi KO. Oživuji tě na 25 % HP." };
+    }
 
-    // Obtížnost multiplikátor
-    let mult = 1.0;
-    if (difficulty === "easy") mult = 0.8;
-    if (difficulty === "medium") mult = 1.0;
-    if (difficulty === "hard") mult = 1.5;
+    const log = [];
+    const loot = [];
 
-    let log = [];
-    let currentHP = s.currentHP;
-
-    // 3 normální mobové
+    // 3 mobové
     for (let i = 1; i <= 3; i++) {
-        const baseMob = getRandomMob();
-        const mob = bestiary.scaleMobDifficulty(baseMob, s.level, difficulty);
+        const mob = getRandomMob();
+        const result = fightMob(username, mob, difficulty);
 
-        const result = fightMob(
-            { ...s, currentHP: currentHP },
-            mob
+        log.push(
+            `Mob ${i}: ${mob.name} (${colorizeRarity(mob.rarity)}) → ` +
+            `dostal jsi ${result.dmgTaken} dmg (HP: ${result.hpLeft})`
         );
 
-        currentHP = result.playerHP;
-
-        if (!result.win) {
-            const deathMsg = playerDeath(username);
-            return { ok: false, msg: `Zemřel jsi u ${mob.name}. ${deathMsg}` };
+        if (result.isDead) {
+            return { ok: false, msg: `Zemřel jsi u ${mob.name}.`, log, loot: [] };
         }
 
-        log.push(`Porazil jsi ${mob.name} (${difficulty}).`);
+        // běžné dropy
+        for (const item of mob.drops) {
+            if (Math.random() < item.chance) {
+                loot.push(`${item.name} (${colorizeRarity(item.rarity)})`);
+            }
+        }
     }
 
-    // Boss fight
-    const baseBoss = getRandomBoss();
-    const boss = bestiary.scaleMobDifficulty(baseBoss, s.level, difficulty);
+    // BOSS
+    const boss = getRandomBoss();
+    const bossResult = fightMob(username, boss, difficulty);
 
-    const bossResult = fightMob(
-        { ...s, currentHP: currentHP },
-        boss
+    log.push(
+        `BOSS: ${boss.name} (${colorizeRarity(boss.rarity)}) → ` +
+        `dostal jsi ${bossResult.dmgTaken} dmg (HP: ${bossResult.hpLeft})`
     );
 
-    currentHP = bossResult.playerHP;
-
-    if (!bossResult.win) {
-        const deathMsg = playerDeath(username);
-        return { ok: false, msg: `Boss ${boss.name} tě zabil. ${deathMsg}` };
+    if (bossResult.isDead) {
+        return { ok: false, msg: `Boss ${boss.name} tě zabil.`, log, loot: [] };
     }
 
-    log.push(`Porazil jsi bosse ${boss.name}!`);
-
-    // Odměny
-    const xpGain = Math.floor((s.level * 20) * mult);
-    const goldGain = Math.floor((s.level * 15) * mult);
-
-    addXP(username, xpGain);
-    addGold(username, goldGain);
-
-    // Loot 1–3 itemy z boss dropů
-    let loot = [];
-
-    const dropCount = Math.floor(Math.random() * 3) + 1;
-
-    for (let i = 0; i < dropCount; i++) {
-        const drop = boss.drops[Math.floor(Math.random() * boss.drops.length)];
-
-        addItem(username, {
-            name: drop.name,
-            rarity: drop.rarity,
-            type: drop.type,
-            amount: 1,
-            value: drop.value || 1,
-            stats: drop.stats || null
-        });
-
-        loot.push(drop.name);
+    // boss dropy
+    for (const item of boss.drops) {
+        if (Math.random() < item.chance) {
+            loot.push(`${item.name} (${colorizeRarity(item.rarity)})`);
+        }
     }
 
-    // Uložíme HP
-    s.currentHP = currentHP;
-    saveStats(stats);
+    // gear drop
+    const gearChance = {
+        common: 0.02,
+        rare: 0.05,
+        epic: 0.10,
+        legendary: 0.20
+    };
+
+    if (Math.random() < (gearChance[boss.rarity] || 0)) {
+        const gear = getGearByRarity(boss.rarity);
+        if (gear) {
+            loot.push(`GEAR: ${gear.name} (${colorizeRarity(gear.rarity)})`);
+        }
+    }
+
+    // XP + GOLD
+    const xpGain = boss.level * 20;
+    const goldGain = boss.level * 15;
+
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+
+    users[username].xp += xpGain;
+    users[username].gold += goldGain;
+
+    // uložit loot
+    for (const drop of loot) {
+        if (drop.startsWith("GEAR: ")) {
+            const name = drop.replace("GEAR: ", "").split(" (")[0];
+            const gear = getGearByRarity(boss.rarity);
+
+            users[username].inventory.push({
+                name: gear.name,
+                rarity: gear.rarity,
+                slot: gear.slot,
+                stats: gear.stats,
+                type: "gear"
+            });
+        }
+    }
+
+    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
 
     return {
         ok: true,
         log,
+        loot,
         xpGain,
-        goldGain,
-        loot
+        goldGain
     };
 }
 
