@@ -1,7 +1,7 @@
+// core/stats.js
 const fs = require("fs");
 const path = "./data/stats.json";
 
-// Bezpečné načtení databáze
 function loadStats() {
     if (!fs.existsSync(path)) return {};
 
@@ -15,12 +15,11 @@ function loadStats() {
     }
 }
 
-// Bezpečné uložení
 function saveStats(db) {
     fs.writeFileSync(path, JSON.stringify(db, null, 2));
 }
 
-// Vytvoření statistik podle levelu
+// základní generování statů podle levelu
 function generateStats(level) {
     const maxHP = 100 + level * 5;
 
@@ -29,16 +28,15 @@ function generateStats(level) {
         currentHP: maxHP,
         strength: 10 + level * 2,
         defense: 5 + level * 1,
+        agility: 5 + level * 1,   // 🆕 obratnost
         luck: Math.floor(level / 3)
     };
 }
 
-// Získání statistik hráče
 function getStats(username, level = 1) {
     const db = loadStats();
     const key = username.toLowerCase();
 
-    // Pokud hráč nemá statistiky → vytvoříme
     if (!db[key]) {
         db[key] = generateStats(level);
         saveStats(db);
@@ -47,7 +45,7 @@ function getStats(username, level = 1) {
     return db[key];
 }
 
-// Aktualizace statistik při level-upu
+// přepočet statů při level-upu
 function updateStats(username, level) {
     const db = loadStats();
     const key = username.toLowerCase();
@@ -59,24 +57,38 @@ function updateStats(username, level) {
     }
 
     const old = db[key];
-    const newStats = generateStats(level);
+    const fresh = generateStats(level);
 
-    // zachováme poměr HP
-    const ratio = old.currentHP / old.hp;
-    newStats.currentHP = Math.floor(newStats.hp * ratio);
+    const ratio = old.hp > 0 ? old.currentHP / old.hp : 1;
+    fresh.currentHP = Math.max(1, Math.floor(fresh.hp * ratio));
 
-    db[key] = newStats;
+    db[key] = fresh;
     saveStats(db);
 }
 
-// Nastavení HP na 25 % po smrti
+// změna HP (např. při lovu / boji)
+function changeHP(username, delta) {
+    const db = loadStats();
+    const key = username.toLowerCase();
+    if (!db[key]) return null;
+
+    const s = db[key];
+    s.currentHP += delta;
+    if (s.currentHP > s.hp) s.currentHP = s.hp;
+    if (s.currentHP < 0) s.currentHP = 0;
+
+    db[key] = s;
+    saveStats(db);
+    return s;
+}
+
+// smrt → 25 % HP
 function applyDeath(username) {
     const db = loadStats();
     const key = username.toLowerCase();
-
     if (!db[key]) return;
 
-    db[key].currentHP = Math.floor(db[key].hp * 0.25);
+    db[key].currentHP = Math.max(1, Math.floor(db[key].hp * 0.25));
     saveStats(db);
 }
 
@@ -85,5 +97,6 @@ module.exports = {
     saveStats,
     getStats,
     updateStats,
+    changeHP,
     applyDeath
 };
