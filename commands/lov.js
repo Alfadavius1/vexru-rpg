@@ -4,7 +4,7 @@ console.log("LOV COMMAND LOADED"); // kontrola načtení
 
 const { getProfile } = require("../core/profile");
 const { getStats, changeHP, applyDeath } = require("../core/stats");
-const { getAllEffects, roll, randInt } = require("../utils/_utilProfese");
+const { getAllEffects, roll } = require("../utils/_utilProfese");
 
 module.exports = {
     name: "lov",
