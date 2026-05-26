@@ -1,36 +1,56 @@
-const { getInventory, removeItem } = require("../core/inventory");
-const { equipItem } = require("../core/gear");
+// commands/equip.js
+
+const fs = require("fs");
+const { getGearByName, colorizeRarity } = require("../core/gear");
 
 module.exports = {
     name: "equip",
-    description: "Nasadí vybavení",
+    description: "Nasadí gear",
 
-    execute: async (client, channel, user, args) => {
+    async execute(client, channel, user, args) {
         const username = user.username.toLowerCase();
+        const itemName = args.join(" ");
 
-        if (!args[0]) {
-            return client.say(channel, `@${username} napiš název itemu, který chceš nasadit.`);
+        if (!itemName) {
+            return client.say(channel, `@${user.username} napiš item který chceš equipnout.`);
         }
 
-        const itemName = args.join(" ").toLowerCase();
-        const inv = getInventory(username);
+        const db = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+        const userData = db[username];
 
-        const item = inv.find(i => i.name.toLowerCase() === itemName);
-
-        if (!item) {
-            return client.say(channel, `@${username} tento item nemáš v inventáři.`);
+        if (!userData) {
+            return client.say(channel, `@${user.username} nemáš profil.`);
         }
 
-        if (!item.stats) {
-            return client.say(channel, `@${username} tento item nelze nasadit.`);
+        const inv = userData.inventory;
+        const index = inv.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
+
+        if (index === -1) {
+            return client.say(channel, `@${user.username} tento item nemáš.`);
         }
 
-        // Odebereme z inventáře
-        removeItem(username, item.name, 1);
+        const item = inv[index];
+        const gear = getGearByName(item.name);
 
-        // Nasadíme
-        equipItem(username, item);
+        if (!gear) {
+            return client.say(channel, `@${user.username} tento item není gear.`);
+        }
 
-        return client.say(channel, `@${username} nasadil jsi **${item.name}**.`);
+        // nasadit gear
+        userData.gear[gear.slot] = {
+            name: gear.name,
+            rarity: gear.rarity,
+            stats: gear.stats
+        };
+
+        // odstranit z inventáře
+        inv.splice(index, 1);
+
+        fs.writeFileSync("./data/users.json", JSON.stringify(db, null, 2));
+
+        return client.say(
+            channel,
+            `@${user.username} nasadil jsi **${gear.name}** (${colorizeRarity(gear.rarity)}) do slotu **${gear.slot}**.`
+        );
     }
 };
