@@ -1,7 +1,7 @@
 // core/profile.js
 const fs = require("fs");
 const path = "./data/users.json";
-const { getRarityInfo } = require("../data/rarity");
+const { getRarityInfo } = require("../core/rarity.js");
 
 function loadDB() {
     if (!fs.existsSync(path)) return {};
