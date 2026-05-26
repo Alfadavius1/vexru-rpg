@@ -1,38 +1,29 @@
+// commands/profil.js
 const { getProfile } = require("../core/profile");
+const { getStats } = require("../core/stats");
 
 module.exports = {
     name: "profil",
     description: "Zobrazí profil hráče",
 
-    execute: async (client, channel, user) => {
+    async execute(client, channel, user) {
         try {
             const username = user.username.toLowerCase();
             const profile = getProfile(username);
+            const stats = getStats(username, profile.level);
 
-            // Profil neexistuje
-            if (!profile) {
-                return client.say(
-                    channel,
-                    `@${user.username} ještě nemáš profil. Zkus třeba !lov.`
-                );
-            }
+            const weapon = profile.gear.weapon ? `${profile.gear.weapon.name} [${profile.gear.weapon.rarity}]` : "nic";
+            const armor = profile.gear.armor ? `${profile.gear.armor.name} [${profile.gear.armor.rarity}]` : "nic";
+            const trinket = profile.gear.trinket ? `${profile.gear.trinket.name} [${profile.gear.trinket.rarity}]` : "nic";
 
-            const { level, xp, gold, rank, stats, gear, buffs, inventoryCount } = profile;
-
-            const weapon = gear.weapon ? gear.weapon.name + ` [${gear.weapon.rarity}]` : "nic";
-            const armor = gear.armor ? gear.armor.name + ` [${gear.armor.rarity}]` : "nic";
-            const trinket = gear.trinket ? gear.trinket.name + ` [${gear.trinket.rarity}]` : "nic";
-
-            // ⭐ Jediná odpověď
             return client.say(
                 channel,
-                `📜 Profil @${user.username} | Rank: ${rank} | Lvl: ${level}\n` +
-                `XP: ${xp} | Gold: ${gold}\n` +
-                `DMG: ${stats.dmg} (+${buffs.dmg}%) | Luck: ${stats.luck} (+${buffs.luck}%) | HP: ${stats.hp}\n` +
+                `📜 Profil @${user.username} | Rank: ${profile.rank} | Lvl: ${profile.level}\n` +
+                `XP: ${profile.xp} | Gold: ${profile.gold}\n` +
+                `DMG: ${stats.strength} | Obratnost: ${stats.agility} | Luck: ${stats.luck} | HP: ${stats.currentHP}/${stats.hp}\n` +
                 `Gear → Weapon: ${weapon}, Armor: ${armor}, Trinket: ${trinket}\n` +
-                `Inventář: ${inventoryCount} itemů`
+                `Inventář: ${profile.inventoryCount} itemů`
             );
-
         } catch (err) {
             console.error("Chyba v !profil:", err);
             return client.say(channel, `@${user.username} něco se pokazilo.`);
