@@ -1,125 +1,71 @@
-const fs = require("fs");
-const path = require("path");
-const { addItem } = require("./inventory");
-const { loadStats, saveStats } = require("./stats");
+// core/gear.js
 
-const gearPath = path.join(__dirname, "..", "data", "gear.json");
+const { colorizeRarity } = require("./rarity");
 
-// Načtení databáze
-function loadGear() {
-    if (!fs.existsSync(gearPath)) return {};
-    const raw = fs.readFileSync(gearPath, "utf8").trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
-}
+const gearItems = [
+    // COMMON
+    {
+        name: "Dřevěný meč",
+        slot: "weapon",
+        rarity: "common",
+        stats: { dmg: 2, defense: 0, hp: 0, luck: 0 }
+    },
+    {
+        name: "Kožená zbroj",
+        slot: "armor",
+        rarity: "common",
+        stats: { dmg: 0, defense: 2, hp: 5, luck: 0 }
+    },
 
-// Uložení databáze
-function saveGear(db) {
-    fs.writeFileSync(gearPath, JSON.stringify(db, null, 2));
-}
+    // RARE
+    {
+        name: "Ostřená čepel",
+        slot: "weapon",
+        rarity: "rare",
+        stats: { dmg: 5, defense: 0, hp: 0, luck: 1 }
+    },
+    {
+        name: "Šupinová zbroj",
+        slot: "armor",
+        rarity: "rare",
+        stats: { dmg: 0, defense: 5, hp: 10, luck: 1 }
+    },
 
-// Sloty
-const validSlots = ["weapon", "armor", "ring", "bracelet"];
+    // EPIC
+    {
+        name: "Runový meč",
+        slot: "weapon",
+        rarity: "epic",
+        stats: { dmg: 10, defense: 0, hp: 0, luck: 2 }
+    },
+    {
+        name: "Runová zbroj",
+        slot: "armor",
+        rarity: "epic",
+        stats: { dmg: 0, defense: 10, hp: 20, luck: 2 }
+    },
 
-// Nasazení itemu
-function equipItem(username, item) {
-    const gear = loadGear();
-    const stats = loadStats();
-
-    if (!gear[username]) {
-        gear[username] = {
-            weapon: null,
-            armor: null,
-            ring: null,
-            bracelet: null
-        };
+    // LEGENDARY
+    {
+        name: "Drakobijec",
+        slot: "weapon",
+        rarity: "legendary",
+        stats: { dmg: 20, defense: 0, hp: 0, luck: 4 }
+    },
+    {
+        name: "Zbroj krále lesa",
+        slot: "armor",
+        rarity: "legendary",
+        stats: { dmg: 0, defense: 20, hp: 40, luck: 4 }
     }
+];
 
-    const slot = item.type;
-    if (!validSlots.includes(slot)) return false;
-
-    // Pokud má hráč něco nasazené → vrátíme do inventáře
-    if (gear[username][slot]) {
-        addItem(username, gear[username][slot]);
-    }
-
-    // Nasadíme nový item
-    gear[username][slot] = item;
-    saveGear(gear);
-
-    // Přepočítáme staty
-    recalcStats(username);
-
-    return true;
-}
-
-// Sundání itemu
-function unequipItem(username, slot) {
-    const gear = loadGear();
-    if (!gear[username]) return false;
-
-    if (!validSlots.includes(slot)) return false;
-
-    const item = gear[username][slot];
-    if (!item) return false;
-
-    // Vrátíme do inventáře
-    addItem(username, item);
-
-    // Odebereme ze slotu
-    gear[username][slot] = null;
-    saveGear(gear);
-
-    // Přepočítáme staty
-    recalcStats(username);
-
-    return true;
-}
-
-// Přepočet statů hráče podle gearu
-function recalcStats(username) {
-    const gear = loadGear();
-    const stats = loadStats();
-
-    if (!stats[username]) return;
-
-    // Základní staty hráče
-    let base = stats[username];
-
-    // Reset bonusů
-    base.bonusAttack = 0;
-    base.bonusDefense = 0;
-    base.bonusHP = 0;
-
-    if (gear[username]) {
-        for (const slot of validSlots) {
-            const item = gear[username][slot];
-            if (item && item.stats) {
-                base.bonusAttack += item.stats.attack || 0;
-                base.bonusDefense += item.stats.defense || 0;
-                base.bonusHP += item.stats.hp || 0;
-            }
-        }
-    }
-
-    // Aplikace bonusů
-    base.strengthTotal = base.strength + base.bonusAttack;
-    base.defenseTotal = base.defense + base.bonusDefense;
-    base.hpTotal = base.hp + base.bonusHP;
-
-    // Pokud HP klesne pod currentHP → upravíme
-    if (base.currentHP > base.hpTotal) {
-        base.currentHP = base.hpTotal;
-    }
-
-    saveStats(stats);
+function getGearByName(name) {
+    return gearItems.find(i => i.name.toLowerCase() === name.toLowerCase()) || null;
 }
 
 module.exports = {
-    loadGear,
-    saveGear,
-    equipItem,
-    unequipItem,
-    recalcStats,
-    validSlots
+    gearItems,
+    getGearByName,
+    colorizeRarity
 };
