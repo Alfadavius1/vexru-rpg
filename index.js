@@ -101,13 +101,15 @@ for (const file of commandFiles) {
 }
 
 // =======================================
-// MESSAGE HANDLER
+// MESSAGE HANDLER – OPRAVENÝ PRO AUTO !all
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
-  if (self) return;
 
-  const username = user.username.toLowerCase();
+  // BOT zprávy ignorujeme, ALE povolíme !all
+  if (self && !message.startsWith("!all")) return;
+
+  const username = user?.username?.toLowerCase() || "všichni";
   const msg = message.toLowerCase();
 
   // COMMANDS
