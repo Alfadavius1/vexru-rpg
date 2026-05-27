@@ -3,7 +3,9 @@ module.exports = {
     description: "Zobrazí všechny zábavné / neherní příkazy",
 
     execute: async (client, channel, user) => {
-        const username = user.username.toLowerCase();
+
+        // Pokud příkaz spustí bot nebo automatický interval → user může být undefined
+        const username = user?.username?.toLowerCase() || "všichni";
 
         const msg = `
 @${username} zábavné příkazy:
