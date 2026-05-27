@@ -14,9 +14,6 @@ const { getProfile } = require("./core/profile");
 // Twitch API modul
 const { getCurrentGame } = require("./core/twitchApi");
 
-// RPG – staty (kvůli regeneraci HP)
-const { loadStats, saveStats } = require("./core/stats");
-
 // =======================================
 // HTTP SERVER PRO RENDER
 // =======================================
@@ -54,7 +51,7 @@ async function getGameCached() {
 const client = new tmi.Client({
   options: { debug: false },
   connection: {
-    reconnect: true,     // AUTO RECONNECT
+    reconnect: true,
     secure: true
   },
   identity: {
@@ -78,7 +75,7 @@ client.on("connected", () => {
 setInterval(() => {
   client.ping().catch(() => {});
   console.log("Heartbeat ping sent");
-}, 1000 * 60 * 5); // každých 5 minut
+}, 1000 * 60 * 5);
 
 // =======================================
 // AUTO RECONNECT LOG
@@ -104,7 +101,7 @@ for (const file of commandFiles) {
 }
 
 // =======================================
-// MESSAGE HANDLER – OPRAVENÝ
+// MESSAGE HANDLER
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
@@ -186,18 +183,20 @@ setInterval(() => {
 // =======================================
 
 setInterval(() => {
-  const stats = loadStats();
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
   let changed = false;
 
-  for (const user in stats) {
-    const s = stats[user];
+  for (const username in users) {
+    const u = users[username];
 
-    if (s.currentHP < s.hp) {
-      const regen = Math.ceil(s.hp * 0.01); // 1 % max HP
-      s.currentHP += regen;
+    if (!u.hp || !u.currentHP) continue;
 
-      if (s.currentHP > s.hp) {
-        s.currentHP = s.hp;
+    if (u.currentHP < u.hp) {
+      const regen = Math.ceil(u.hp * 0.01); // 1 % max HP
+      u.currentHP += regen;
+
+      if (u.currentHP > u.hp) {
+        u.currentHP = u.hp;
       }
 
       changed = true;
@@ -205,7 +204,7 @@ setInterval(() => {
   }
 
   if (changed) {
-    saveStats(stats);
+    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
   }
 }, 10000);
 
