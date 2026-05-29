@@ -101,7 +101,7 @@ for (const file of commandFiles) {
 }
 
 // =======================================
-// MESSAGE HANDLER – OPRAVENÝ PRO AUTO !all
+// MESSAGE HANDLER – UPRAVENO: BOT ODPOVÍDÁ JEN NA OTÁZKY
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
@@ -129,8 +129,8 @@ client.on("message", async (channel, user, message, self) => {
     return;
   }
 
-  // PRIORITA 1 — BOT NAME
-  if (msg.includes("vexru")) {
+  // JEDINÁ PODMÍNKA PRO AI — ZPRÁVA MUSÍ KONČIT OTÁZNÍKEM
+  if (msg.endsWith("?")) {
     const profile = getProfile(username);
     let extra = "";
 
@@ -142,12 +142,6 @@ client.on("message", async (channel, user, message, self) => {
 
     const ai = getAIResponse();
     return client.say(channel, `@${username} ${ai} ${extra}`);
-  }
-
-  // PRIORITA 2 — QUESTIONS
-  if (msg.endsWith("?")) {
-    const ai = getAIResponse();
-    return client.say(channel, `@${username} ${ai}`);
   }
 
   // SPAM
