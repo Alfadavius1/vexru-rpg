@@ -101,7 +101,7 @@ for (const file of commandFiles) {
 }
 
 // =======================================
-// MESSAGE HANDLER – UPRAVENO: BOT ODPOVÍDÁ JEN NA OTÁZKY
+// MESSAGE HANDLER – BOT ODPOVÍDÁ JEN NA "vexru"
 // =======================================
 
 client.on("message", async (channel, user, message, self) => {
@@ -129,8 +129,12 @@ client.on("message", async (channel, user, message, self) => {
     return;
   }
 
-  // JEDINÁ PODMÍNKA PRO AI — ZPRÁVA MUSÍ KONČIT OTÁZNÍKEM
-  if (msg.endsWith("?")) {
+  // JEDINÁ PODMÍNKA PRO AI — ZPRÁVA MUSÍ OBSAHOVAT "vexru"
+  const mention =
+    msg.includes("vexru") ||
+    msg.includes("@vexru");
+
+  if (mention) {
     const profile = getProfile(username);
     let extra = "";
 
@@ -144,26 +148,7 @@ client.on("message", async (channel, user, message, self) => {
     return client.say(channel, `@${username} ${ai} ${extra}`);
   }
 
-  // SPAM
-  if (/([a-zA-Z])\1\1/.test(msg)) {
-    return client.say(channel, `@${username} klid, nebo ti dám cooldown na život.`);
-  }
-
-  // GAME REACTIONS
-  const game = await getGameCached();
-  if (game) {
-    const g = game.toLowerCase();
-
-    if (g.includes("tarkov")) {
-      return client.say(channel, `🔫 Tarkov? Šance na přežití: 12 %, tilt: 98 %.`);
-    } else if (g.includes("cs2") || g.includes("counter-strike")) {
-      return client.say(channel, `🎯 CS2? Aim dneska spí jak medvěd.`);
-    } else if (g.includes("fortnite")) {
-      return client.say(channel, `🏗️ Fortnite? To je dětská verze Tarkova.`);
-    } else if (g.includes("outlast")) {
-      return client.say(channel, `😱 Outlast? Doufám, že máš čistý trenky.`);
-    }
-  }
+  // NIC JINÉHO NEŘEŠÍME
 });
 
 // =======================================
