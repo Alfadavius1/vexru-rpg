@@ -14,7 +14,6 @@ module.exports = {
 • !banan — změří banán
 • !ego — ego level
 • !skill — skill level
-• !power — power level
 
 🤖 AI ROLEPLAY
 • !hacker — AI hacker odpověď
